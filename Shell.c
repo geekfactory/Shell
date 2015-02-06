@@ -38,7 +38,7 @@ static int shell_parse(char * buf, char** argv, unsigned short maxargs);
 static void shell_prompt();
 
 
-static void shell_format();
+static void shell_format(const char * fmt, va_list va);
 
 /**
  * Default message of the day
@@ -145,22 +145,22 @@ void shell_print_error(int error, const char * field)
 	shell_print((const char *) "#ERROR-TYPE:");
 	switch (error) {
 	case E_SHELL_ERR_ARGCOUNT:
-		shell_print((const char *) "ArgCount");
+		shell_print((const char *) "ARG_COUNT");
 		break;
 	case E_SHELL_ERR_OUTOFRANGE:
-		shell_print((const char *) "OutOfRange");
+		shell_print((const char *) "OUT_OF_RANGE");
 		break;
 	case E_SHELL_ERR_VALUE:
-		shell_print((const char *) "InvalidVal");
+		shell_print((const char *) "INVALID_VALUE");
 		break;
 	case E_SHELL_ERR_ACTION:
-		shell_print((const char *) "InvalidAct");
+		shell_print((const char *) "INVALID_ACTION");
 		break;
 	case E_SHELL_ERR_PARSE:
-		shell_print((const char *) "Parse");
+	shell_print((const char *) "PARSING");
 		break;
 	case E_SHELL_ERR_STORAGE:
-		shell_print((const char *) "Storage");
+		shell_print((const char *) "STORAGE");
 		break;
 	case E_SHELL_ERR_IO:
 		shell_print((const char *) "IO");
@@ -183,7 +183,7 @@ void shell_println(const char * string)
 	shell_print("\r\n");
 }
 
-void shell_printf(char * fmt, ...)
+void shell_printf(const char * fmt, ...)
 {
 	va_list argl;
 	va_start(argl, fmt);
@@ -270,6 +270,7 @@ void shell_task()
 
 /*-------------------------------------------------------------*/
 /*		Internal functions				*/
+
 /*-------------------------------------------------------------*/
 static int shell_parse(char * buf, char ** argv, unsigned short maxargs)
 {
@@ -392,9 +393,9 @@ static int a2d(char ch)
 	else return -1;
 }
 
-static char a2i(char ch, char** src, int base, int* nump)
+static char a2i(char ch, const char** src, int base, int* nump)
 {
-	char* p = *src;
+	const char* p = *src;
 	int num = 0;
 	int digit;
 	while ((digit = a2d(ch)) >= 0) {
@@ -420,7 +421,7 @@ static void putchw(int n, char z, char* bf)
 		shell_writer(ch);
 }
 
-static void shell_format(char * fmt, va_list va)
+static void shell_format(const char * fmt, va_list va)
 {
 	char bf[12];
 	char ch;

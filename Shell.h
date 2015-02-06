@@ -215,7 +215,7 @@ void shell_println(const char * string);
  *
  * @param ... Aditional arguments that are inserted on the string as text
  */
-void shell_printf(char * fmt, ...);
+void shell_printf(const char * fmt, ...);
 
 /**
  * @brief Main Shell processing loop
