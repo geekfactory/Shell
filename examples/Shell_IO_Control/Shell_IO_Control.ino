@@ -1,23 +1,3 @@
-/**
- * SIMPLE EXAMPLE OF COMMAND SHELL LIBRARY
- * 
- * This library implements a command line interface. The experience is similar to the windows
- * command prompt. This library can invoke functions when a specific string is received, in this
- * example we register 2 commands that can be executed by typing their names on the arduino serial
- * monitor (using the hardware UART).
- * 
- * The "shell" library is designed to be independent of the communication channel, this means
- * that it can be used with serial, softSerial and even TCP connections. For this reason the
- * shell library requires 2 pointers to functions to read and write characters to and from the
- * physical transmission media.
- * 
- * Arguments can be passed to the programs that are invoked by the command line and parsed by
- * standard string parsing functions, or you can write your own functions. The arguments
- * are passed as pointers to characters (null terminated strings) in a similar way that you
- * would receive them on any command line tool written in C. Each parameter is separated by
- * a "space" character after the command name.
- */
-
 #include <Shell.h>
 
 void setup()
@@ -73,9 +53,9 @@ int command_ioctrl(int argc, char** argv)
       shell_println("Arguments in square brackets [ ] are mandatory; arguments in curly brackets { } are optional");
       shell_println("");
       shell_println("AVAILABLE SWITCHES:");
-      shell_println("  -p [PIN NUMBER]     -> \"Sets\" the pin to perform other operations on the pin");
-      shell_println("  -m [INPUT / OUTPUT] -> \"Configures\" PIN mode as input or output");
-      shell_println("  -w [LOW / HIGH]     -> \"Writes\" a digital output value: LOW or HIGH state");
+      shell_println("  -p [PIN_NUMBER]     -> \"Sets\" the pin (PIN_NUMBER) to perform other operations on the pin");
+      shell_println("  -m [INPUT|OUTPUT]   -> \"Configures\" PIN mode as INPUT or OUTPUT");
+      shell_println("  -w [LOW|HIGH]       -> \"Writes\" a digital output value LOW or HIGH");
       shell_println("  -r                  -> \"Reads\" the state of a digital input or output");
       shell_println("  -help               -> Shows this help message");
       shell_println("");

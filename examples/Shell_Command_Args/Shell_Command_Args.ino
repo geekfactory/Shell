@@ -1,22 +1,15 @@
-
 /**
- * SIMPLE EXAMPLE OF COMMAND SHELL LIBRARY
- * 
- * This library implements a command line interface. The experience is similar to the windows
- * command prompt. This library can invoke functions when a specific string is received, in this
- * example we register 2 commands that can be executed by typing their names on the arduino serial
- * monitor (using the hardware UART).
- * 
- * The "shell" library is designed to be independent of the communication channel, this means
- * that it can be used with serial, softSerial and even TCP connections. For this reason the
- * shell library requires 2 pointers to functions to read and write characters to and from the
- * physical transmission media.
- * 
- * Arguments can be passed to the programs that are invoked by the command line and parsed by
- * standard string parsing functions, or you can write your own functions. The arguments
- * are passed as pointers to characters (null terminated strings) in a similar way that you
- * would receive them on any command line tool written in C. Each parameter is separated by
- * a "space" character after the command name.
+ * GeekFactory - "Construye tu propia tecnologia"
+ * Distribucion de materiales para el desarrollo e innovacion tecnologica
+ * www.geekfactory.mx
+ *
+ * Ejemplo de libreria Shell. En este ejemplo se ilustra la recepcion y manejo
+ * de los parametros recibidos por el comando. Se imprimen cada uno de los
+ * argumentos recibidos así como la longitud de cada una de las cadenas.
+ *
+ * Example for Shell library. This example shows the reception and handling of
+ * arguments received by command programs. The arguments are printed along with
+ * the string lenghts.
  */
 
 #include <Shell.h>
@@ -80,7 +73,7 @@ int shell_reader(char * data)
 
 /**
  * Function to write data to serial port
- * Functions to write to physical media should use this prototype
+ * Functions to write to physical media should use this prototype:
  * void my_writer_function(char data)
  */
 void shell_writer(char data)

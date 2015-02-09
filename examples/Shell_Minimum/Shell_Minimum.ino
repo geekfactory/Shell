@@ -1,7 +1,13 @@
 /**
- * SIMPLE EXAMPLE OF COMMAND SHELL LIBRARY
- * 
- * Minimal program to setup the library and read / write to serial port
+ * GeekFactory - "Construye tu propia tecnologia"
+ * Distribucion de materiales para el desarrollo e innovacion tecnologica
+ * www.geekfactory.mx
+ *
+ * Ejemplo de libreria Shell. Este ejemplo representa la configuracion minima
+ * requerida para implementar la funcionalidad de interfaz de comandos.
+ *
+ * Example for Shell library. This example shows the minimum setup needed to
+ * implement a command line interface.
  */
 
 #include <Shell.h>
@@ -53,7 +59,7 @@ int shell_reader(char * data)
 
 /**
  * Function to write data to serial port
- * Functions to write to physical media should use this prototype
+ * Functions to write to physical media should use this prototype:
  * void my_writer_function(char data)
  */
 void shell_writer(char data)
@@ -61,4 +67,3 @@ void shell_writer(char data)
   // Wrapper for Serial.write() method
   Serial.write(data);
 }
-
