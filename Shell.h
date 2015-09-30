@@ -25,6 +25,11 @@
 #include <string.h>
 #include <stdint.h>
 #include <stdarg.h>
+#include <stdbool.h>
+#ifdef ARDUINO
+#include <Arduino.h>
+#include <avr/pgmspace.h>
+#endif
 
 /*-------------------------------------------------------------*/
 /*		Macros and definitions				*/
@@ -39,7 +44,7 @@
 /**
  * Defines the maximum characters that the input buffer can accept
  */
-#define CONFIG_SHELL_MAX_INPUT			100
+#define CONFIG_SHELL_MAX_INPUT			70
 #endif
 #if !defined(CONFIG_SHELL_MAX_COMMAND_ARGS)
 /**
@@ -47,6 +52,14 @@
  */
 #define CONFIG_SHELL_MAX_COMMAND_ARGS		10
 #endif
+
+#if !defined(CONFIG_SHELL_FMT_BUFFER)
+/**
+ * Defines the maximum number of commands that can be registered
+ */
+#define CONFIG_SHELL_FMT_BUFFER			70
+#endif
+
 
 #define SHELL_ASCII_NUL				0x00
 #define SHELL_ASCII_BEL				0x07
@@ -134,7 +147,7 @@ extern "C" {
  * @return Returns TRUE if the shell was succesfully initialized, returns FALSE
  * otherwise.
  */
-uint8_t shell_init(shell_reader_t reader, shell_writer_t writer, char * msg);
+bool shell_init(shell_reader_t reader, shell_writer_t writer, char * msg);
 
 /**
  * @brief Register a command with the command interpreter
@@ -150,7 +163,7 @@ uint8_t shell_init(shell_reader_t reader, shell_writer_t writer, char * msg);
  * @return Returns TRUE if command was successfully added to the command list,
  * or returns FALSE if something fails (no more commands can be registered).
  */
-uint8_t shell_register(shell_program_t program, const char * string);
+bool shell_register(shell_program_t program, const char * string);
 
 /**
  * @brief Unregister all commands
@@ -225,6 +238,12 @@ void shell_printf(const char * fmt, ...);
  * data stream.
  */
 void shell_task();
+
+#ifdef ARDUINO
+void shell_print_pm(const char * string);
+void shell_println_pm(const char * string);
+void shell_printf_pm(const char * fmt, ...);
+#endif
 
 #ifdef	__cplusplus
 }

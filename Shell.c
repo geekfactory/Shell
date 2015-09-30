@@ -20,37 +20,6 @@
 #include "Shell.h"
 
 /**
- * Parses the string and finds all the substrings (arguments)
- *
- * @param buf The buffer containing the original string
- * 
- * @param argv Pointer to char * array to place the pointers to substrings
- * 
- * @param maxargs The maximum number of pointers that the previous array can hold
- *
- * @return The total of args parsed
- */
-static int shell_parse(char * buf, char** argv, unsigned short maxargs);
-
-/**
- *  Prints the command shell prompt
- */
-static void shell_prompt();
-
-
-static void shell_format(const char * fmt, va_list va);
-
-/**
- * Default message of the day
- */
-const char defaultmotd[] = "uShell 1.0 (c) 2015 Jesus Ruben Santa Anna Z.\r\nVisit us: www.geekfactory.mx\r\n";
-
-/**
- * String for the shell prompt
- */
-const char prompt[] = "device>";
-
-/**
  * This structure array contains the available commands and they associated
  * function entry point, other data required by the commands may be added to
  * this structure
@@ -68,38 +37,72 @@ char * argv_list[CONFIG_SHELL_MAX_COMMAND_ARGS];
  */
 char shellbuf[CONFIG_SHELL_MAX_INPUT];
 
+#ifdef ARDUINO
+/**
+ * This is the buffer for formatted strings
+ */
+char shellfmtbuf[CONFIG_SHELL_FMT_BUFFER];
+#endif
+
 shell_reader_t shell_reader = 0;
 shell_writer_t shell_writer = 0;
 
-enum _BOOL {
-	FALSE = 0,
-	TRUE = 1,
-};
 
-uint8_t initialized = FALSE;
+bool initialized = false;
 
-uint8_t shell_init(shell_reader_t reader, shell_writer_t writer, char * msg)
+/**
+ * Parses the string and finds all the substrings (arguments)
+ *
+ * @param buf The buffer containing the original string
+ * 
+ * @param argv Pointer to char * array to place the pointers to substrings
+ * 
+ * @param maxargs The maximum number of pointers that the previous array can hold
+ *
+ * @return The total of args parsed
+ */
+static int shell_parse(char * buf, char** argv, unsigned short maxargs);
+
+/**
+ *  Prints the command shell prompt
+ */
+static void shell_prompt();
+
+/**
+ * Helper function for formatting text in shell_printf and shell_printf_pm
+ *
+ * @param fmt
+ *
+ * @param va
+ */
+static void shell_format(const char * fmt, va_list va);
+
+
+bool shell_init(shell_reader_t reader, shell_writer_t writer, char * msg)
 {
 	if (reader == 0 || writer == 0)
-		return FALSE;
+		return false;
 
 	shell_unregister_all();
 
 	shell_reader = reader;
 	shell_writer = writer;
-	initialized = TRUE;
+	initialized = true;
 
 	// Print Message and draw command prompt
 	if (msg != 0)
 		shell_println(msg);
 	else
-		shell_println(defaultmotd);
+#ifdef ARDUINO
+		shell_println_pm(PSTR("uShell 1.0"));
+#else
+		shell_println((const char *) "uShell 1.0");
+#endif
 	shell_prompt();
-
-	return TRUE;
+	return true;
 }
 
-uint8_t shell_register(shell_program_t program, const char * string)
+bool shell_register(shell_program_t program, const char * string)
 {
 	unsigned char i;
 
@@ -108,9 +111,9 @@ uint8_t shell_register(shell_program_t program, const char * string)
 			continue;
 		list[i].shell_program = program;
 		list[i].shell_command_string = string;
-		return TRUE;
+		return true;
 	}
-	return FALSE;
+	return false;
 }
 
 void shell_unregister_all()
@@ -136,6 +139,40 @@ void shell_print_commands()
 
 void shell_print_error(int error, const char * field)
 {
+#ifdef ARDUINO
+	if (field != 0) {
+		shell_print_pm(PSTR("#ERROR-FIELD:"));
+		shell_print(field);
+		shell_print_pm(PSTR("\r\n"));
+	}
+
+	shell_print_pm(PSTR("#ERROR-TYPE:"));
+	switch (error) {
+	case E_SHELL_ERR_ARGCOUNT:
+		shell_println_pm(PSTR("ARG_COUNT"));
+		break;
+	case E_SHELL_ERR_OUTOFRANGE:
+		shell_println_pm(PSTR("OUT_OF_RANGE"));
+		break;
+	case E_SHELL_ERR_VALUE:
+		shell_println_pm(PSTR("INVALID_VALUE"));
+		break;
+	case E_SHELL_ERR_ACTION:
+		shell_println_pm(PSTR("INVALID_ACTION"));
+		break;
+	case E_SHELL_ERR_PARSE:
+		shell_println_pm(PSTR("PARSING"));
+		break;
+	case E_SHELL_ERR_STORAGE:
+		shell_println_pm(PSTR("STORAGE"));
+		break;
+	case E_SHELL_ERR_IO:
+		shell_println_pm(PSTR("IO"));
+		break;
+	default:
+		shell_println_pm(PSTR("Unknown"));
+	}
+#else
 	if (field != 0) {
 		shell_print((const char *) "#ERROR-FIELD:");
 		shell_print(field);
@@ -157,7 +194,7 @@ void shell_print_error(int error, const char * field)
 		shell_print((const char *) "INVALID_ACTION");
 		break;
 	case E_SHELL_ERR_PARSE:
-	shell_print((const char *) "PARSING");
+		shell_print((const char *) "PARSING");
 		break;
 	case E_SHELL_ERR_STORAGE:
 		shell_print((const char *) "STORAGE");
@@ -169,6 +206,7 @@ void shell_print_error(int error, const char * field)
 		shell_print("Unknown");
 	}
 	shell_print("\r\n");
+#endif
 }
 
 void shell_print(const char * string)
@@ -177,17 +215,53 @@ void shell_print(const char * string)
 		shell_writer(* string++);
 }
 
+#ifdef ARDUINO
+void shell_print_pm(const char * string)
+{
+	uint8_t c;
+	do {
+		c = pgm_read_byte(string++);
+		if (!c)
+			break;
+		shell_writer(c);
+	} while (1);
+}
+#endif
+
 void shell_println(const char * string)
 {
 	shell_print(string);
-	shell_print("\r\n");
+#ifdef ARDUINO
+	shell_print_pm(PSTR("\r\n"));
+#else
+	shell_print((const char *)"\r\n");
+#endif
 }
+
+#ifdef ARDUINO
+
+void shell_println_pm(const char * string)
+{
+	shell_print_pm(string);
+	shell_print_pm(PSTR("\r\n"));
+}
+#endif
 
 void shell_printf(const char * fmt, ...)
 {
 	va_list argl;
 	va_start(argl, fmt);
 	shell_format(fmt, argl);
+	va_end(argl);
+}
+
+void shell_printf_pm(const char * fmt, ...)
+{
+	// First copy to RAM
+	memcpy_P(shellfmtbuf, fmt, strlen_P(fmt)+1);
+	va_list argl;
+	va_start(argl, shellfmtbuf);
+	shell_format(shellfmtbuf, argl);
 	va_end(argl);
 }
 
@@ -223,7 +297,7 @@ void shell_task()
 
 		case SHELL_ASCII_CR: // Enter key pressed
 			shellbuf[count] = '\0';
-			shell_print((const char *) "\r\n");
+			shell_println("");
 			finished = 1;
 			break;
 
@@ -259,10 +333,14 @@ void shell_task()
 				}
 			}
 			if (finished != 0 && count != 0) // If no command found and buffer not empty
-				shell_print((const char *) "Command NOT found.\r\n"); // Print not found!!
+#ifdef ARDUINO
+				shell_println_pm(PSTR("Command NOT found."));
+#else
+				shell_println((const char *) "Command NOT found."); // Print not found!!
+#endif
 
 			count = 0;
-			shell_print((const char *) "\r\n");
+			shell_println("");
 			shell_prompt();
 		}
 	}
@@ -270,7 +348,6 @@ void shell_task()
 
 /*-------------------------------------------------------------*/
 /*		Internal functions				*/
-
 /*-------------------------------------------------------------*/
 static int shell_parse(char * buf, char ** argv, unsigned short maxargs)
 {
@@ -318,7 +395,11 @@ static int shell_parse(char * buf, char ** argv, unsigned short maxargs)
 
 static void shell_prompt()
 {
-	shell_print(prompt);
+#ifdef ARDUINO
+	shell_print_pm(PSTR("device>"));
+#else
+	shell_print((const char *) "device>");
+#endif
 }
 
 /*-------------------------------------------------------------*/
