@@ -77,7 +77,6 @@ static void shell_prompt();
  */
 static void shell_format(const char * fmt, va_list va);
 
-
 bool shell_init(shell_reader_t reader, shell_writer_t writer, char * msg)
 {
 	if (reader == 0 || writer == 0)
@@ -141,7 +140,7 @@ void shell_print_error(int error, const char * field)
 {
 #ifdef ARDUINO
 	if (field != 0) {
-		shell_print_pm(PSTR("#ERROR-FIELD:"));
+		shell_print_pm(PSTR("#ERROR-PARAM:"));
 		shell_print(field);
 		shell_print_pm(PSTR("\r\n"));
 	}
@@ -174,7 +173,7 @@ void shell_print_error(int error, const char * field)
 	}
 #else
 	if (field != 0) {
-		shell_print((const char *) "#ERROR-FIELD:");
+		shell_print((const char *) "#ERROR-PARAM:");
 		shell_print(field);
 		shell_print("\r\n");
 	}
@@ -182,16 +181,16 @@ void shell_print_error(int error, const char * field)
 	shell_print((const char *) "#ERROR-TYPE:");
 	switch (error) {
 	case E_SHELL_ERR_ARGCOUNT:
-		shell_print((const char *) "ARG_COUNT");
+		shell_print((const char *) "ARG-COUNT");
 		break;
 	case E_SHELL_ERR_OUTOFRANGE:
-		shell_print((const char *) "OUT_OF_RANGE");
+		shell_print((const char *) "OUT-OF-RANGE");
 		break;
 	case E_SHELL_ERR_VALUE:
-		shell_print((const char *) "INVALID_VALUE");
+		shell_print((const char *) "INVALID-VALUE");
 		break;
 	case E_SHELL_ERR_ACTION:
-		shell_print((const char *) "INVALID_ACTION");
+		shell_print((const char *) "INVALID-ACTION");
 		break;
 	case E_SHELL_ERR_PARSE:
 		shell_print((const char *) "PARSING");
@@ -216,6 +215,7 @@ void shell_print(const char * string)
 }
 
 #ifdef ARDUINO
+
 void shell_print_pm(const char * string)
 {
 	uint8_t c;
@@ -234,7 +234,7 @@ void shell_println(const char * string)
 #ifdef ARDUINO
 	shell_print_pm(PSTR("\r\n"));
 #else
-	shell_print((const char *)"\r\n");
+	shell_print((const char *) "\r\n");
 #endif
 }
 
@@ -258,7 +258,7 @@ void shell_printf(const char * fmt, ...)
 void shell_printf_pm(const char * fmt, ...)
 {
 	// First copy to RAM
-	memcpy_P(shellfmtbuf, fmt, strlen_P(fmt)+1);
+	memcpy_P(shellfmtbuf, fmt, strlen_P(fmt) + 1);
 	va_list argl;
 	va_start(argl, shellfmtbuf);
 	shell_format(shellfmtbuf, argl);
@@ -326,7 +326,11 @@ void shell_task()
 				if (list[i].shell_program == 0)
 					continue;
 				// If string matches one on the list
+#ifdef ARDUINO
+				if (!strcmp_P(argv_list[0], list[i].shell_command_string)) {
+#else
 				if (!strcmp(argv_list[0], list[i].shell_command_string)) {
+#endif		
 					// Run the appropiate function
 					retval = list[i].shell_program(argc, argv_list);
 					finished = 0;
@@ -348,6 +352,7 @@ void shell_task()
 
 /*-------------------------------------------------------------*/
 /*		Internal functions				*/
+
 /*-------------------------------------------------------------*/
 static int shell_parse(char * buf, char ** argv, unsigned short maxargs)
 {

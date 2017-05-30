@@ -25,6 +25,7 @@ void setup()
   pinMode(3,OUTPUT);
   pinMode(5,OUTPUT);
   pinMode(6,OUTPUT);
+  pinMode(9,OUTPUT);
 
   // Initialize command line interface (CLI)
   // We pass the function pointers to the read and write functions that we implement below
@@ -60,6 +61,9 @@ int command_rgbled(int argc, char** argv)
 
   val_B = strtol(argv[3],NULL,0);
   analogWrite(6, val_B);
+  
+  val_B = strtol(argv[4],NULL,0);
+  analogWrite(9, val_B);
 
   // Print the received falues to the terminal screen
   shell_printf("#RGB-COMPONENTS:%d,%d,%d\r\n", val_R, val_G, val_B);

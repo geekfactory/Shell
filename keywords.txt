@@ -1,0 +1,31 @@
+#######################################
+# Syntax Coloring Map for GFLed
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+shell_init				KEYWORD2
+shell_register			KEYWORD2
+shell_unregister_all	KEYWORD2
+shell_print_commands	KEYWORD2
+shell_print_error		KEYWORD2
+shell_print				KEYWORD2
+shell_println			KEYWORD2
+shell_printf			KEYWORD2
+shell_task				KEYWORD2
+shell_print_pm			KEYWORD2
+shell_println_pm		KEYWORD2
+shell_printf_pm			KEYWORD2
+
+#######################################
+# Instances (KEYWORD2)
+#######################################
+
+#######################################
+# Constants (LITERAL1)
+#######################################
