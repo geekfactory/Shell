@@ -93,9 +93,9 @@ bool shell_init(shell_reader_t reader, shell_writer_t writer, char * msg)
 		shell_println(msg);
 	else
 #ifdef ARDUINO
-		shell_println_pm(PSTR("uShell 1.0"));
+		shell_println_pm(PSTR(SHELL_VERSION_STRING));
 #else
-		shell_println((const char *) "uShell 1.0");
+		shell_println((const char *) SHELL_VERSION_STRING);
 #endif
 	shell_prompt();
 	return true;

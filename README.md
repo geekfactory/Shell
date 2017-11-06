@@ -35,7 +35,7 @@ The programs (functions) that implement the functionality of each command should
 int command_func(int argc, char ** argv);
 ```
 
-## Basic library example using arduino
+## Basic library example using arduino ##
 
 ```cpp
 /**
@@ -156,13 +156,13 @@ The library is meant to work in other CPU architectures where a C compiler is av
 
 
 
-#Librería de linea de comandos para Arduino y otros microcontroladores.#
+# Librería Shell de GeekFactory #
 
-Esta librería permite **controlar nuestros programas y dispositivos con simples comandos de texto** de manera similar a la terminal en Mac OSX o linux y la linea de comandos de Windows. Los comandos pueden transmitirse al microcontrolador mediante un puerto serie, un socket TCP/IP o una conexión USB CDC.
+Esta librería permite **controlar nuestros programas y dispositivos con simples comandos de texto** de manera similar a la terminal en Mac OSX o linux y la linea de comandos de Windows. Los comandos pueden transmitirse al microcontrolador mediante un puerto serie, un socket TCP/IP o una conexión USB CDC. **Esta librería está escrita en C puro para permitir que funcione en microcontroladores/compiladores que no soportan C++**.
 
-### Uso básico de la librería
+## Uso básico de la librería ##
 
-Para utilizar la librería debemos llamar a la función de inicialización que le dice a la librería que funciones debe usar para leer y escribir sobre el medio (serial, TCP/IP, etc.)
+Para utilizar la librería debemos llamar a la función de inicialización que le dice a la librería que funciones debe usar para leer y escribir sobre el medio (serial, TCP/IP, etc.). El siguiente código preparará la librería para su uso y le indica que use las funciones shell_reader() para leer bytes desde el puerto serie y la función shell_writter() para escribir bytes al serial.
 
 ```c
 // Initialize command line interface (CLI)
@@ -186,22 +186,127 @@ Finalmente, dentro del ciclo principal de cada aplicación, el programador debe 
 shell_task();
 ```
 
-Los programas (funciones) que implementan cada uno de los comandos se deben escribir con el prototipo estándar de C y reciben los parámetros para realizar su función de manera similar a una utilidad de linea de comandos.
+Los programas (funciones) que implementan cada uno de los comandos se deben escribir con el prototipo estándar de C y reciben los parámetros para realizar su función de manera similar a una utilidad de linea de comandos programada para una PC.
 
 ```c
 int command_func(int argc, char ** argv);
 ```
 
-### Objetivos de este proyecto
+## Ejemplo básico de la librería utilizando arduino ##
 
-Buscamos que la librería cumpla con los siguientes puntos:
+```cpp
+/**
+ * GeekFactory - "Construye tu propia tecnologia"
+ * Distribucion de materiales para el desarrollo e innovacion tecnologica
+ * www.geekfactory.mx
+ *
+ * Ejemplo de libreria Shell. Este ejemplo representa la configuracion minima
+ * requerida para implementar la funcionalidad de interfaz de comandos. En esta
+ * ocasion registramos 2 comandos y enviamos texto como respuesta a cada uno.
+ *
+ * Example for Shell library. This example shows the minimum setup needed to
+ * implement a command line interface. This time we register 2 commands and we
+ * send text as response for each command.
+ */
 
-* El código debe ser portable a otras plataformas
-* la librería debe ser compacta
-* Debe facilitar para agregar comandos
+#include <Shell.h>
 
-###Dispositivos Soportados
+void setup()
+{
+  // Prepare serial communication
+  Serial.begin(9600);
+  // Wait after reset or power on...
+  delay(1000);
 
-* Microcontroladores PIC (PIC16F, PIC18F, PIC24F, dsPIC)
+  // Initialize command line interface (CLI)
+  // We pass the function pointers to the read and write functions that we implement below
+  // We can also pass a char pointer to display a custom start message
+  shell_init(shell_reader, shell_writer, 0);
+
+  // Add commands to the shell
+  shell_register(command_mycommand, "mycommand");
+  shell_register(command_othercommand, "othercommand");
+}
+
+void loop()
+{
+  // This should always be called to process user input
+  shell_task();
+}
+
+/**
+ * Test commands: The commands should always use this function prototype.
+ * They receive 2 parameters: The total count of arguments (argc) and a pointer 
+ * to the begining of each one of the null-terminated argument strings.
+ *
+ * In this example we ignore the parameters passed to the functions
+ */
+int command_mycommand(int argc, char** argv)
+{
+  shell_println("Running \"mycommand\" now");
+  shell_println("Exit...");
+  return SHELL_RET_SUCCESS;
+}
+
+int command_othercommand(int argc, char** argv)
+{
+  shell_println("Running \"othercommand\" now");
+  shell_println("Exit...");
+  return SHELL_RET_SUCCESS;
+}
+
+/**
+ * Function to read data from serial port
+ * Functions to read from physical media should use this prototype:
+ * int my_reader_function(char * data)
+ */
+int shell_reader(char * data)
+{
+  // Wrapper for Serial.read() method
+  if (Serial.available()) {
+    *data = Serial.read();
+    return 1;
+  }
+  return 0;
+}
+
+/**
+ * Function to write data to serial port
+ * Functions to write to physical media should use this prototype:
+ * void my_writer_function(char data)
+ */
+void shell_writer(char data)
+{
+  // Wrapper for Serial.write() method
+  Serial.write(data);
+}
+```
+
+## Objetivos del proyecto ##
+
+Nuestra librería debe cumplir los siguientes objetivos:
+
+* El código debe ser fácilmente portable a otras plataformas
+* La liobrería debe ser compacta
+* Debe ser fácil agregar nuevos comandos
+
+
+## Dispositivos soportados ##
+
+La librería fue desarrollada/probada en las siguientes tarjetas:
+
 * Arduino UNO R3
-* Prácticamente cualquier dispositivo que tenga un compilador de C respetable
+* Arduino Mega 2560 R3
+* Pruebas básicas en tarjetas con ESP8266
+
+La librería fue probada en los siguientes microcontroladores PIC usando MPLAB X:
+
+* PIC24FJ64GA002
+* PIC24HJ128GA504
+
+La librería GeekFactory Shell esta diseñada para trabajar en otras arquitecturas de CPU donde exista un compilador de C, por favor comentanos sobre tu experiencia si la pruebas en otras plataformas.
+
+## Contáctame ##
+
+* Contacto para cualquier tema referente a esta librería: ruben en geekfactory.mx
+* Revisa nuestro sitio web: https://www.geekfactory.mx
