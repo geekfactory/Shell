@@ -260,7 +260,7 @@ void shell_printf_pm(const char * fmt, ...)
 	// First copy to RAM
 	memcpy_P(shellfmtbuf, fmt, strlen_P(fmt) + 1);
 	va_list argl;
-	va_start(argl, shellfmtbuf);
+	va_start(argl, fmt);
 	shell_format(shellfmtbuf, argl);
 	va_end(argl);
 }
