@@ -27,7 +27,7 @@ void setup()
   shell_init(shell_reader, shell_writer, 0);
 
   // Add commands to the shell
-  shell_register(command_test, "test");
+  shell_register(command_test, PSTR("test"));
 }
 
 void loop()

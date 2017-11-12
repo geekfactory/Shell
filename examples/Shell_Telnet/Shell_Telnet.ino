@@ -63,7 +63,7 @@ void setup()
   shell_init(shell_reader, shell_writer, 0);
 
   // Add commands to the shell
-  shell_register(command_rgbled, "rgbled");
+  shell_register(command_rgbled, PSTR("rgbled"));
 
 }
 
