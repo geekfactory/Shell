@@ -67,8 +67,8 @@ void setup()
   shell_init(shell_reader, shell_writer, 0);
 
   // Add commands to the shell
-  shell_register(command_mycommand, "mycommand");
-  shell_register(command_othercommand, "othercommand");
+  shell_register(command_mycommand, PSTR("mycommand"));
+  shell_register(command_othercommand, PSTR("othercommand"));
 }
 
 void loop()
@@ -224,8 +224,8 @@ void setup()
   shell_init(shell_reader, shell_writer, 0);
 
   // Add commands to the shell
-  shell_register(command_mycommand, "mycommand");
-  shell_register(command_othercommand, "othercommand");
+  shell_register(command_mycommand, PSTR("mycommand"));
+  shell_register(command_othercommand, PSTR("othercommand"));
 }
 
 void loop()
