@@ -87,7 +87,7 @@
 #define SHELL_RET_FAILURE			1
 #define SHELL_RET_IOPENDING			-1
 
-#define SHELL_VERSION_STRING			"uShell 1.0.0"
+#define SHELL_VERSION_STRING			"uShell 1.0.1"
 
 /*-------------------------------------------------------------*/
 /*		Typedefs enums & structs			*/
