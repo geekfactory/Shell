@@ -327,7 +327,11 @@ void shell_task()
 					continue;
 				// If string matches one on the list
 #ifdef ARDUINO
+#ifdef ESP8266
+				if (!strcmp(argv_list[0], list[i].shell_command_string)) {
+#else
 				if (!strcmp_P(argv_list[0], list[i].shell_command_string)) {
+#endif
 #else
 				if (!strcmp(argv_list[0], list[i].shell_command_string)) {
 #endif		
