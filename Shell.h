@@ -19,9 +19,9 @@
  */
 #ifndef SHELL_H
 #define SHELL_H
-/*-------------------------------------------------------------*/
-/*		Includes and dependencies			*/
-/*-------------------------------------------------------------*/
+/*-------------------------------------------------------------*
+ *		Includes and dependencies			*
+ *-------------------------------------------------------------*/
 #include <string.h>
 #include <stdint.h>
 #include <stdarg.h>
@@ -36,9 +36,12 @@
 #endif
 #endif
 
-/*-------------------------------------------------------------*/
-/*		Library Configuration				*/
-/*-------------------------------------------------------------*/
+/*-------------------------------------------------------------*
+ *		Library Configuration				*
+ *-------------------------------------------------------------*/
+
+// You can configure several operation parameters of the shell library here
+
 #if !defined(CONFIG_SHELL_MAX_COMMANDS)
 /**
  * Defines the maximum number of commands that can be registered
@@ -53,21 +56,24 @@
 #endif
 #if !defined(CONFIG_SHELL_MAX_COMMAND_ARGS)
 /**
- * Configures the maximum number of arguments per command tha can be accepted
+ * Configures the maximum number of arguments per command that can be accepted
  */
 #define CONFIG_SHELL_MAX_COMMAND_ARGS		10
 #endif
 
 #if !defined(CONFIG_SHELL_FMT_BUFFER)
 /**
- * Defines the buffer for formatted string output from program memory
+ * Defines the buffer for formatted string output from program memory.
+ * THIS SETTING IS USED ONLY FOR ARDUINO BOARDS
  */
 #define CONFIG_SHELL_FMT_BUFFER			70
 #endif
 
-/*-------------------------------------------------------------*/
-/*		Macros and definitions				*/
-/*-------------------------------------------------------------*/
+// End of user configurable parameters, do not touch anything below this line
+
+/*-------------------------------------------------------------*
+ *		Macros & definitions				*
+ *-------------------------------------------------------------*/
 #define SHELL_ASCII_NUL				0x00
 #define SHELL_ASCII_BEL				0x07
 #define SHELL_ASCII_BS				0x08
@@ -87,11 +93,11 @@
 #define SHELL_RET_FAILURE			1
 #define SHELL_RET_IOPENDING			-1
 
-#define SHELL_VERSION_STRING			"uShell 1.0.1"
+#define SHELL_VERSION_STRING			"1.0.1"
 
-/*-------------------------------------------------------------*/
-/*		Typedefs enums & structs			*/
-/*-------------------------------------------------------------*/
+/*-------------------------------------------------------------*
+ *		Typedefs enums & structs			*
+ *-------------------------------------------------------------*/
 
 /**
  *  Type definition for all the programs invoked by the shell (function pointer)
@@ -141,9 +147,9 @@ struct shell_command_entry {
 	const char * shell_command_string;
 };
 
-/*-------------------------------------------------------------*/
-/*		Function prototypes				*/
-/*-------------------------------------------------------------*/
+/*-------------------------------------------------------------*
+ *		Function prototypes				*
+ *-------------------------------------------------------------*/
 #ifdef	__cplusplus
 extern "C" {
 #endif
@@ -155,9 +161,7 @@ extern "C" {
 	 * shell_task().
 	 *
 	 * @param reader The callback function used to get a character from the stream.
-	 *
 	 * @param writer The callback function used to write a character to the stream.
-	 *
 	 * @param msg The message to display upon startup of the program
 	 *
 	 * @return Returns true if the shell was successfully initialized, returns false
@@ -172,8 +176,8 @@ extern "C" {
 	 * and the function that implements it's functionality should be provided.
 	 *
 	 * @param program The type shell_program_t is a pointer to a function
-	 * that is executed when the written command matches the associated name
-	 *
+	 * that is executed when the command written by user matches an entry on the
+	 * command list.
 	 * @param string A string containing the name of the command to be registered.
 	 *
 	 * @return Returns true if command was successfully added to the command list,
@@ -184,30 +188,19 @@ extern "C" {
 	/**
 	 * @brief Unregister all commands
 	 *
-	 * Erases all entries on the command list, returning it to it�s default status.
+	 * Erases all entries on the command list, returning it to it´s default status.
 	 */
 	void shell_unregister_all();
 
 	/**
-	 * @brief Prints the list of registered commands
-	 *
-	 * Prints a list of available commands to the terminal using the callback
-	 * functions provided on initialization.
+	 * @brief Prints a character to the terminal
+	 * 
+	 * Prints a single character to the terminal screen, it exposes the functionality
+	 * of the shell_writer callback function
+	 * 
+	 * @param c A character to print to the terminal screen
 	 */
-	void shell_print_commands();
-
-	/**
-	 * @brief Prints error messages to the terminal screen
-	 *
-	 * This function presents an alternative for displaying program errors in a
-	 * uniform format.
-	 *
-	 * @param error The code (ID) of the error to print
-	 *
-	 * @param field The name of the parameter or variable where the error was
-	 * detected.
-	 */
-	void shell_print_error(int error, const char * field);
+	void shell_putc(char c);
 
 	/**
 	 * @brief Prints a null terminated string to the terminal
@@ -245,6 +238,27 @@ extern "C" {
 	 * @param ... Aditional arguments that are inserted on the string as text
 	 */
 	void shell_printf(const char * fmt, ...);
+	
+	/**
+	 * @brief Prints the list of registered commands
+	 *
+	 * Prints a list of available commands to the terminal using the callback
+	 * functions provided on initialization.
+	 */
+	void shell_print_commands();
+
+	/**
+	 * @brief Prints error messages to the terminal screen
+	 *
+	 * This function presents an alternative for displaying program errors in a
+	 * uniform format.
+	 *
+	 * @param error The code (ID) of the error to print
+	 *
+	 * @param field The name of the parameter or variable where the error was
+	 * detected.
+	 */
+	void shell_print_error(int error, const char * field);
 
 	/**
 	 * @brief Main Shell processing loop
@@ -260,7 +274,6 @@ extern "C" {
 	 * @brief Prints a null terminated string to the terminal from flash
 	 *
 	 * Displays a string on the terminal. The string should be null terminated.
-	 * 
 	 * This function is designed to be used with strings stored in flash.
 	 *
 	 * @param string The string to send to the terminal

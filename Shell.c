@@ -27,7 +27,7 @@
 struct shell_command_entry list[CONFIG_SHELL_MAX_COMMANDS];
 
 /**
- * This array of pointers to characters holds the addresses of the begining of
+ * This array of pointers to characters holds the addresses of the beginning of
  * the parameter strings passed to the programs
  */
 char * argv_list[CONFIG_SHELL_MAX_COMMAND_ARGS];
@@ -39,24 +39,23 @@ char shellbuf[CONFIG_SHELL_MAX_INPUT];
 
 #ifdef ARDUINO
 /**
- * This is the buffer for formatted strings
+ * This is the buffer for format strings coming from PROGMEM
  */
 char shellfmtbuf[CONFIG_SHELL_FMT_BUFFER];
 #endif
 
 shell_reader_t shell_reader = 0;
 shell_writer_t shell_writer = 0;
-
-
 bool initialized = false;
 
+/*-------------------------------------------------------------*
+ *		Internal function prototypes			*
+ *-------------------------------------------------------------*/
 /**
  * Parses the string and finds all the substrings (arguments)
  *
  * @param buf The buffer containing the original string
- * 
  * @param argv Pointer to char * array to place the pointers to substrings
- * 
  * @param maxargs The maximum number of pointers that the previous array can hold
  *
  * @return The total of args parsed
@@ -71,12 +70,14 @@ static void shell_prompt();
 /**
  * Helper function for formatting text in shell_printf and shell_printf_pm
  *
- * @param fmt
- *
- * @param va
+ * @param fmt The format string
+ * @param va The list of arguments to use
  */
 static void shell_format(const char * fmt, va_list va);
 
+/*-------------------------------------------------------------*
+ *		Public API Implementation			*
+ *-------------------------------------------------------------*/
 bool shell_init(shell_reader_t reader, shell_writer_t writer, char * msg)
 {
 	if (reader == 0 || writer == 0)
@@ -89,14 +90,17 @@ bool shell_init(shell_reader_t reader, shell_writer_t writer, char * msg)
 	initialized = true;
 
 	// Print Message and draw command prompt
-	if (msg != 0)
+	if (msg != 0) {
 		shell_println(msg);
-	else
+	} else {
 #ifdef ARDUINO
+		shell_print_pm(PSTR("Microcontroller Shell library Ver. "));
 		shell_println_pm(PSTR(SHELL_VERSION_STRING));
 #else
+		shell_print((const char *) "Microcontroller Shell library Ver. ");
 		shell_println((const char *) SHELL_VERSION_STRING);
 #endif
+	}
 	shell_prompt();
 	return true;
 }
@@ -125,10 +129,40 @@ void shell_unregister_all()
 	}
 }
 
+void shell_putc(char c)
+{
+	if (initialized && shell_writer)
+		shell_writer(c);
+}
+
+void shell_print(const char * string)
+{
+	while (* string != '\0')
+		shell_writer(* string++);
+}
+
+void shell_println(const char * string)
+{
+	shell_print(string);
+#ifdef ARDUINO
+	shell_print_pm(PSTR("\r\n"));
+#else
+	shell_print((const char *) "\r\n");
+#endif
+}
+
+void shell_printf(const char * fmt, ...)
+{
+	va_list argl;
+	va_start(argl, fmt);
+	shell_format(fmt, argl);
+	va_end(argl);
+}
+
 void shell_print_commands()
 {
 	unsigned char i;
-
+	
 	for (i = 0; i < CONFIG_SHELL_MAX_COMMANDS; i++) {
 		if (list[i].shell_program != 0 || list[i].shell_command_string != 0) {
 			shell_println(list[i].shell_command_string);
@@ -208,63 +242,6 @@ void shell_print_error(int error, const char * field)
 #endif
 }
 
-void shell_print(const char * string)
-{
-	while (* string != '\0')
-		shell_writer(* string++);
-}
-
-#ifdef ARDUINO
-
-void shell_print_pm(const char * string)
-{
-	uint8_t c;
-	do {
-		c = pgm_read_byte(string++);
-		if (!c)
-			break;
-		shell_writer(c);
-	} while (1);
-}
-#endif
-
-void shell_println(const char * string)
-{
-	shell_print(string);
-#ifdef ARDUINO
-	shell_print_pm(PSTR("\r\n"));
-#else
-	shell_print((const char *) "\r\n");
-#endif
-}
-
-#ifdef ARDUINO
-
-void shell_println_pm(const char * string)
-{
-	shell_print_pm(string);
-	shell_print_pm(PSTR("\r\n"));
-}
-#endif
-
-void shell_printf(const char * fmt, ...)
-{
-	va_list argl;
-	va_start(argl, fmt);
-	shell_format(fmt, argl);
-	va_end(argl);
-}
-
-void shell_printf_pm(const char * fmt, ...)
-{
-	// First copy to RAM
-	memcpy_P(shellfmtbuf, fmt, strlen_P(fmt) + 1);
-	va_list argl;
-	va_start(argl, fmt);
-	shell_format(shellfmtbuf, argl);
-	va_end(argl);
-}
-
 void shell_task()
 {
 	unsigned int i = 0, retval = 0;
@@ -283,7 +260,6 @@ void shell_task()
 
 		switch (rxchar) {
 		case SHELL_ASCII_ESC: // For VT100 escape sequences
-		case '[':
 			// Process escape sequences: maybe later
 			break;
 
@@ -312,7 +288,7 @@ void shell_task()
 			break;
 		default:
 			// Process printable characters, but ignore other ASCII chars
-			if (count < CONFIG_SHELL_MAX_INPUT && rxchar >= 0x20 && rxchar < 0x7F) {
+			if (count < (CONFIG_SHELL_MAX_INPUT - 1) && rxchar >= 0x20 && rxchar < 0x7F) {
 				shellbuf[count] = rxchar;
 				shell_writer(rxchar);
 				count++;
@@ -350,10 +326,38 @@ void shell_task()
 	}
 }
 
-/*-------------------------------------------------------------*/
-/*		Internal functions				*/
+#ifdef ARDUINO
+void shell_print_pm(const char * string)
+{
+	uint8_t c;
+	do {
+		c = pgm_read_byte(string++);
+		if (!c)
+			break;
+		shell_writer(c);
+	} while (1);
+}
 
-/*-------------------------------------------------------------*/
+void shell_println_pm(const char * string)
+{
+	shell_print_pm(string);
+	shell_print_pm(PSTR("\r\n"));
+}
+
+void shell_printf_pm(const char * fmt, ...)
+{
+	// First copy to RAM
+	memcpy_P(shellfmtbuf, fmt, strlen_P(fmt) + 1);
+	va_list argl;
+	va_start(argl, fmt);
+	shell_format(shellfmtbuf, argl);
+	va_end(argl);
+}
+#endif
+
+/*-------------------------------------------------------------*
+ *		Internal functions				*
+ *-------------------------------------------------------------*/
 static int shell_parse(char * buf, char ** argv, unsigned short maxargs)
 {
 	int i = 0;
@@ -381,7 +385,6 @@ static int shell_parse(char * buf, char ** argv, unsigned short maxargs)
 			} else {
 				toggle = 0;
 				buf[i] = '\0';
-
 			}
 			break;
 
@@ -586,4 +589,3 @@ static void shell_format(const char * fmt, va_list va)
 abort:
 	;
 }
-
