@@ -33,13 +33,14 @@ struct shell_command_entry list[CONFIG_SHELL_MAX_COMMANDS];
 char * argv_list[CONFIG_SHELL_MAX_COMMAND_ARGS];
 
 /**
- * This is the main buffer to store received characters
+ * This is the main buffer to store received characters from the user´s terminal
  */
 char shellbuf[CONFIG_SHELL_MAX_INPUT];
 
 #ifdef ARDUINO
 /**
- * This is the buffer for format strings coming from PROGMEM
+ * This is the buffer for format strings coming from PROGMEM, they´re copied here
+ * before further processing
  */
 char shellfmtbuf[CONFIG_SHELL_FMT_BUFFER];
 #endif
@@ -63,17 +64,25 @@ bool initialized = false;
 static int shell_parse(char * buf, char** argv, unsigned short maxargs);
 
 /**
- *  Prints the command shell prompt
- */
-static void shell_prompt();
-
-/**
  * Helper function for formatting text in shell_printf and shell_printf_pm
  *
  * @param fmt The format string
  * @param va The list of arguments to use
  */
 static void shell_format(const char * fmt, va_list va);
+
+/**
+ * Process escaped character inside command args string
+ *  
+ * @param argc The total number of arguments received for the command
+ * @param argv	Pointers to the argument strings
+ */
+static void shell_process_escape(int argc, char ** argv);
+
+/**
+ *  Prints the command shell prompt
+ */
+static void shell_prompt();
 
 /*-------------------------------------------------------------*
  *		Public API Implementation			*
@@ -162,7 +171,7 @@ void shell_printf(const char * fmt, ...)
 void shell_print_commands()
 {
 	unsigned char i;
-	
+
 	for (i = 0; i < CONFIG_SHELL_MAX_COMMANDS; i++) {
 		if (list[i].shell_program != 0 || list[i].shell_command_string != 0) {
 			shell_println(list[i].shell_command_string);
@@ -297,6 +306,8 @@ void shell_task()
 		// Check if a full command is available on the buffer to process
 		if (finished) {
 			argc = shell_parse(shellbuf, argv_list, CONFIG_SHELL_MAX_COMMAND_ARGS);
+			// Process escape sequences before giving args to command implementation
+			shell_process_escape(argc, argv_list);
 			// sequential search on command table
 			for (i = 0; i < CONFIG_SHELL_MAX_COMMANDS; i++) {
 				if (list[i].shell_program == 0)
@@ -307,7 +318,7 @@ void shell_task()
 #else
 				if (!strcmp(argv_list[0], list[i].shell_command_string)) {
 #endif		
-					// Run the appropiate function
+					// Run the appropriate function
 					retval = list[i].shell_program(argc, argv_list);
 					finished = 0;
 				}
@@ -327,6 +338,7 @@ void shell_task()
 }
 
 #ifdef ARDUINO
+
 void shell_print_pm(const char * string)
 {
 	uint8_t c;
@@ -364,30 +376,42 @@ static int shell_parse(char * buf, char ** argv, unsigned short maxargs)
 	int argc = 0;
 	int length = strlen(buf) + 1; //String lenght to parse = strlen + 1
 	char toggle = 0;
-
+	bool escape = false;
 
 	argv[argc] = &buf[0];
 
 	for (i = 0; i < length && argc < maxargs; i++) {
 		switch (buf[i]) {
-			// String terminator means at least one arg
+			// Handle special char: String terminator
 		case '\0':
 			i = length;
 			argc++;
 			break;
 
-			// Check for double quotes for strings as parameters
+			// Handle special char: Backslash for escape sequences
+		case '\\':
+			// Begin of escape sequence, the following char will get
+			// to it´s case with the boolean "escape" flag set
+			escape = true;
+			continue;
+
+			// Handle special char: Double quotes
 		case '\"':
-			if (toggle == 0) {
-				toggle = 1;
-				buf[i] = '\0';
-				argv[argc] = &buf[i + 1];
-			} else {
-				toggle = 0;
-				buf[i] = '\0';
+			// If double quote is not escaped, process it as string start and end character
+			// If it´s escaped then we do nothing and let the next step remove character escaping
+			if (!escape) {
+				if (toggle == 0) {
+					toggle = 1;
+					buf[i] = '\0';
+					argv[argc] = &buf[i + 1];
+				} else {
+					toggle = 0;
+					buf[i] = '\0';
+				}
 			}
 			break;
 
+			// Handle special char: Space is token separator
 		case ' ':
 			if (toggle == 0) {
 				buf[i] = '\0';
@@ -397,8 +421,41 @@ static int shell_parse(char * buf, char ** argv, unsigned short maxargs)
 			break;
 
 		}
+		// For character escaping
+		escape = false;
 	}
 	return argc;
+}
+
+static void shell_process_escape(int argc, char ** argv)
+{
+	uint8_t i, j;
+	int sl;
+	uint8_t readindex = 0;
+
+	// loop for every parameter
+	for (i = 0; i < argc; i++) {
+		// get the length of the current arg
+		sl = strlen(argv[i]);
+		// loop through every character inside this argument
+		for (j = 0; j < sl; j++) {
+			// search for backslash character
+			if (argv[i][j + readindex] == '\\') {
+				// Process escaped characters here
+				if (argv[i][j + readindex + 1] == '"') {
+					// Write quote double quote on the current position
+					argv[i][j] = '"';
+					readindex++;
+				}
+			}
+			// read ahead and copy to current position only if escaped characters found
+			if (readindex) {
+				argv[i][j] = argv[i][j + readindex];
+			}
+		}
+		// Reset for the next arg
+		readindex = 0;
+	}
 }
 
 static void shell_prompt()
@@ -410,9 +467,9 @@ static void shell_prompt()
 #endif
 }
 
-/*-------------------------------------------------------------*/
-/*		Shell formatted print support			*/
-/*-------------------------------------------------------------*/
+/*-------------------------------------------------------------*
+ *		Shell formatted print support			*
+ *-------------------------------------------------------------*/
 #ifdef SHELL_PRINTF_LONG_SUPPORT
 
 static void uli2a(unsigned long int num, unsigned int base, int uc, char * bf)
@@ -441,7 +498,6 @@ static void li2a(long num, char * bf)
 	}
 	uli2a(num, 10, 0, bf);
 }
-
 #endif
 
 static void ui2a(unsigned int num, unsigned int base, int uc, char * bf)

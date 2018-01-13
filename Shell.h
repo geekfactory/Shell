@@ -40,7 +40,9 @@
  *		Library Configuration				*
  *-------------------------------------------------------------*/
 
-// You can configure several operation parameters of the shell library here
+/**
+ * You can configure several operation parameters of the shell library here
+ */
 
 #if !defined(CONFIG_SHELL_MAX_COMMANDS)
 /**
@@ -69,7 +71,9 @@
 #define CONFIG_SHELL_FMT_BUFFER			70
 #endif
 
-// End of user configurable parameters, do not touch anything below this line
+/**
+ * End of user configurable parameters, do not touch anything below this line
+ */ 
 
 /*-------------------------------------------------------------*
  *		Macros & definitions				*
@@ -93,7 +97,7 @@
 #define SHELL_RET_FAILURE			1
 #define SHELL_RET_IOPENDING			-1
 
-#define SHELL_VERSION_STRING			"1.0.1"
+#define SHELL_VERSION_STRING			"1.1.0"
 
 /*-------------------------------------------------------------*
  *		Typedefs enums & structs			*
@@ -224,12 +228,12 @@ extern "C" {
 	/**
 	 * @brief Prints formatted text to the terminal
 	 *
-	 * Displays a string (fmt) on the terminal. If the string includes format
+	 * Displays a string on the terminal. If the string includes format
 	 * specifiers (subsequences beginning with '%'), the additional arguments
-	 * following format are formatted and inserted in the resulting string
+	 * following format string are formatted and inserted in the resulting string
 	 * replacing their respective specifiers.
 	 *
-	 * This function implements it�s own mechanism for text formatting. It doesn�t
+	 * This function implements its own mechanism for text formatting. It does not
 	 * rely on the native print functions.
 	 *
 	 * @param fmt The string to send to the terminal, the string can include format
@@ -274,7 +278,8 @@ extern "C" {
 	 * @brief Prints a null terminated string to the terminal from flash
 	 *
 	 * Displays a string on the terminal. The string should be null terminated.
-	 * This function is designed to be used with strings stored in flash.
+	 * This function is designed to be used with strings stored in flash on the
+	 * arduino platform.
 	 *
 	 * @param string The string to send to the terminal
 	 */
@@ -284,9 +289,8 @@ extern "C" {
 	 * @brief Prints a string from flash and moves the cursor to the next line
 	 *
 	 * Displays a string on the terminal and moves the cursor to the next line. The
-	 * string should be null terminated.
-	 * 
-	 * This function is designed to be used with strings stored in flash.
+	 * string should be null terminated. This function is designed to be used with
+	 * strings stored in flash on the arduino platform.
 	 *
 	 * @param string The string to send to the terminal
 	 */
@@ -302,7 +306,7 @@ extern "C" {
 	 * 
 	 * This function is designed to be used with strings stored in flash.
 	 *
-	 * This function implements it�s own mechanism for text formatting. It doesn�t
+	 * This function implements it´s own mechanism for text formatting. It doesn´t
 	 * rely on the native print functions.
 	 *
 	 * @param fmt The string to send to the terminal, the string can include format
