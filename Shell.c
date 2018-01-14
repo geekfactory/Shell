@@ -116,7 +116,7 @@ bool shell_init(shell_reader_t reader, shell_writer_t writer, char * msg)
 
 bool shell_register(shell_program_t program, const char * string)
 {
-	unsigned char i;
+	uint8_t i;
 
 	for (i = 0; i < CONFIG_SHELL_MAX_COMMANDS; i++) {
 		if (list[i].shell_program != 0 || list[i].shell_command_string != 0)
@@ -130,7 +130,7 @@ bool shell_register(shell_program_t program, const char * string)
 
 void shell_unregister_all()
 {
-	unsigned char i;
+	uint8_t i;
 
 	for (i = 0; i < CONFIG_SHELL_MAX_COMMANDS; i++) {
 		list[i].shell_program = 0;
@@ -140,14 +140,14 @@ void shell_unregister_all()
 
 void shell_putc(char c)
 {
-	if (initialized && shell_writer)
+	if (initialized != false && shell_writer != 0)
 		shell_writer(c);
 }
 
 void shell_print(const char * string)
 {
 	while (* string != '\0')
-		shell_writer(* string++);
+		shell_putc(* string++);
 }
 
 void shell_println(const char * string)
@@ -170,8 +170,12 @@ void shell_printf(const char * fmt, ...)
 
 void shell_print_commands()
 {
-	unsigned char i;
-
+	uint8_t i;
+#ifdef ARDUINO
+	shell_println_pm(PSTR("Available Commands:"));
+#else
+	shell_println((const char *) "Available Commands:");
+#endif
 	for (i = 0; i < CONFIG_SHELL_MAX_COMMANDS; i++) {
 		if (list[i].shell_program != 0 || list[i].shell_command_string != 0) {
 			shell_println(list[i].shell_command_string);
@@ -253,13 +257,13 @@ void shell_print_error(int error, const char * field)
 
 void shell_task()
 {
-	unsigned int i = 0, retval = 0;
+	// Number of characters written to buffer (this should be static var)
+	static uint16_t count = 0;
+	uint8_t i = 0;
+	bool cc = 0;
+	int retval = 0;
 	int argc = 0;
 	char rxchar = 0;
-	char finished = 0;
-
-	// Number of characters written to buffer (this should be static var)
-	static unsigned short count = 0;
 
 	if (!initialized)
 		return;
@@ -273,38 +277,40 @@ void shell_task()
 			break;
 
 		case SHELL_ASCII_DEL:
-			shell_writer(SHELL_ASCII_BEL);
+			shell_putc(SHELL_ASCII_BEL);
 			break;
 
 		case SHELL_ASCII_HT:
-			shell_writer(SHELL_ASCII_BEL);
+			shell_putc(SHELL_ASCII_BEL);
 			break;
 
 		case SHELL_ASCII_CR: // Enter key pressed
 			shellbuf[count] = '\0';
 			shell_println("");
-			finished = 1;
+			cc = true;
 			break;
 
 		case SHELL_ASCII_BS: // Backspace pressed
 			if (count > 0) {
 				count--;
-				shell_writer(SHELL_ASCII_BS);
-				shell_writer(SHELL_ASCII_SP);
-				shell_writer(SHELL_ASCII_BS);
+				shell_putc(SHELL_ASCII_BS);
+				shell_putc(SHELL_ASCII_SP);
+				shell_putc(SHELL_ASCII_BS);
 			} else
-				shell_writer(SHELL_ASCII_BEL);
+				shell_putc(SHELL_ASCII_BEL);
 			break;
 		default:
 			// Process printable characters, but ignore other ASCII chars
 			if (count < (CONFIG_SHELL_MAX_INPUT - 1) && rxchar >= 0x20 && rxchar < 0x7F) {
 				shellbuf[count] = rxchar;
-				shell_writer(rxchar);
+				shell_putc(rxchar);
 				count++;
+			} else {
+				shell_putc(SHELL_ASCII_BEL);
 			}
 		}
 		// Check if a full command is available on the buffer to process
-		if (finished) {
+		if (cc) {
 			argc = shell_parse(shellbuf, argv_list, CONFIG_SHELL_MAX_COMMAND_ARGS);
 			// Process escape sequences before giving args to command implementation
 			shell_process_escape(argc, argv_list);
@@ -314,23 +320,26 @@ void shell_task()
 					continue;
 				// If string matches one on the list
 #ifdef ARDUINO
-				if (!strcmp_P(argv_list[0], list[i].shell_command_string)) {
+				if (!strcmp_P(argv_list[0], list[i].shell_command_string))
 #else
-				if (!strcmp(argv_list[0], list[i].shell_command_string)) {
+				if (!strcmp(argv_list[0], list[i].shell_command_string))
 #endif		
+				{
 					// Run the appropriate function
 					retval = list[i].shell_program(argc, argv_list);
-					finished = 0;
+					cc = false;
 				}
 			}
-			if (finished != 0 && count != 0) // If no command found and buffer not empty
+			// If no command found and buffer not empty
+			if (cc != false && count != 0) {
 #ifdef ARDUINO
 				shell_println_pm(PSTR("Command NOT found."));
 #else
 				shell_println((const char *) "Command NOT found."); // Print not found!!
 #endif
-
+			}
 			count = 0;
+			cc = false;
 			shell_println("");
 			shell_prompt();
 		}
@@ -346,7 +355,7 @@ void shell_print_pm(const char * string)
 		c = pgm_read_byte(string++);
 		if (!c)
 			break;
-		shell_writer(c);
+		shell_putc(c);
 	} while (1);
 }
 
@@ -471,7 +480,6 @@ static void shell_prompt()
  *		Shell formatted print support			*
  *-------------------------------------------------------------*/
 #ifdef SHELL_PRINTF_LONG_SUPPORT
-
 static void uli2a(unsigned long int num, unsigned int base, int uc, char * bf)
 {
 	int n = 0;
@@ -561,9 +569,9 @@ static void putchw(int n, char z, char* bf)
 	while (*p++ && n > 0)
 		n--;
 	while (n-- > 0)
-		shell_writer(fc);
+		shell_putc(fc);
 	while ((ch = *bf++))
-		shell_writer(ch);
+		shell_putc(ch);
 }
 
 static void shell_format(const char * fmt, va_list va)
@@ -574,7 +582,7 @@ static void shell_format(const char * fmt, va_list va)
 
 	while ((ch = *(fmt++))) {
 		if (ch != '%')
-			shell_writer(ch);
+			shell_putc(ch);
 		else {
 			char lz = 0;
 #ifdef  PRINTF_LONG_SUPPORT
@@ -630,13 +638,13 @@ static void shell_format(const char * fmt, va_list va)
 				putchw(w, lz, bf);
 				break;
 			case 'c':
-				shell_writer((char) (va_arg(va, int)));
+				shell_putc((char) (va_arg(va, int)));
 				break;
 			case 's':
 				putchw(w, 0, va_arg(va, char*));
 				break;
 			case '%':
-				shell_writer(ch);
+				shell_putc(ch);
 			default:
 				break;
 			}

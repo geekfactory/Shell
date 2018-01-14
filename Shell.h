@@ -192,7 +192,7 @@ extern "C" {
 	/**
 	 * @brief Unregister all commands
 	 *
-	 * Erases all entries on the command list, returning it to it´s default status.
+	 * Erases all entries on the command list, returning it to it's default status.
 	 */
 	void shell_unregister_all();
 
@@ -233,7 +233,7 @@ extern "C" {
 	 * following format string are formatted and inserted in the resulting string
 	 * replacing their respective specifiers.
 	 *
-	 * This function implements its own mechanism for text formatting. It does not
+	 * This function implements it's own mechanism for text formatting. It does not
 	 * rely on the native print functions.
 	 *
 	 * @param fmt The string to send to the terminal, the string can include format
@@ -306,7 +306,7 @@ extern "C" {
 	 * 
 	 * This function is designed to be used with strings stored in flash.
 	 *
-	 * This function implements it´s own mechanism for text formatting. It doesn´t
+	 * This function implements it's own mechanism for text formatting. It doesn't
 	 * rely on the native print functions.
 	 *
 	 * @param fmt The string to send to the terminal, the string can include format
