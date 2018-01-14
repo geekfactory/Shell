@@ -73,7 +73,7 @@
 
 /**
  * End of user configurable parameters, do not touch anything below this line
- */ 
+ */
 
 /*-------------------------------------------------------------*
  *		Macros & definitions				*
@@ -120,6 +120,12 @@ typedef void (*shell_writer_t) (char);
  */
 typedef int (*shell_reader_t) (char *);
 
+/*
+ * Type definition for a function that sends multiple chars to the remote
+ * terminal (function pointer)
+ */
+typedef void (*shell_bwriter_t)(char *, uint8_t);
+
 /**
  * This enumeration defines the errors printed by the programs called by the
  * shell.
@@ -151,6 +157,13 @@ struct shell_command_entry {
 	const char * shell_command_string;
 };
 
+struct shell_outbuffer_data {
+	char outbuffer[30];
+	shell_bwriter_t shell_bwriter;
+	uint32_t buffertimer;
+	uint8_t buffercount;
+};
+
 /*-------------------------------------------------------------*
  *		Function prototypes				*
  *-------------------------------------------------------------*/
@@ -172,6 +185,23 @@ extern "C" {
 	 * otherwise.
 	 */
 	bool shell_init(shell_reader_t reader, shell_writer_t writer, char * msg);
+	
+	/**
+	 * @brief Enables internal output buffer for output chars
+	 * 
+	 * Call this function to enable the use of an internal buffer to temporary store
+	 * characters that will be sent to a remote device. This function is meant to be
+	 * used when the communication channel performs better when many characters are 
+	 * written at the same time. For example TCP/IP sockets perform better if a group 
+	 * of characters are sent on a single segment.
+	 * 
+	 * The content of the internal buffer is written when the it is full or if
+	 * 200 milliseconds have elapsed since the last character write on the buffer.
+	 * 
+         * @param writer The callback function used to write a group of characters on the
+	 * stream.
+         */
+	void shell_use_buffered_output(shell_bwriter_t writer);
 
 	/**
 	 * @brief Registers a command with the command line library
@@ -242,7 +272,7 @@ extern "C" {
 	 * @param ... Aditional arguments that are inserted on the string as text
 	 */
 	void shell_printf(const char * fmt, ...);
-	
+
 	/**
 	 * @brief Prints the list of registered commands
 	 *

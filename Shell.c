@@ -47,6 +47,7 @@ char shellfmtbuf[CONFIG_SHELL_FMT_BUFFER];
 
 shell_reader_t shell_reader = 0;
 shell_writer_t shell_writer = 0;
+struct shell_outbuffer_data * obhandle = 0;
 bool initialized = false;
 
 /*-------------------------------------------------------------*
@@ -114,6 +115,17 @@ bool shell_init(shell_reader_t reader, shell_writer_t writer, char * msg)
 	return true;
 }
 
+void shell_use_buffered_output(shell_bwriter_t writer)
+{
+	static struct shell_outbuffer_data obd;
+
+	obhandle = &obd;
+
+	obd.shell_bwriter = writer;
+	obd.buffercount = 0;
+	obd.buffertimer = millis();
+}
+
 bool shell_register(shell_program_t program, const char * string)
 {
 	uint8_t i;
@@ -142,6 +154,20 @@ void shell_putc(char c)
 {
 	if (initialized != false && shell_writer != 0)
 		shell_writer(c);
+	if (initialized != false && obhandle != 0) {
+		// Keep track of last byte
+		obhandle->buffertimer = millis();
+		// Empty buffer if it´s full before storing anything else
+		if (obhandle->buffercount >= 30) {
+			// Write output...
+			if (obhandle->shell_bwriter != 0)
+				obhandle->shell_bwriter(obhandle->outbuffer, obhandle->buffercount);
+			// and clear counter
+			obhandle->buffercount = 0;
+		}
+		// Write to buffer always
+		obhandle->outbuffer[obhandle->buffercount++] = c;
+	}
 }
 
 void shell_print(const char * string)
@@ -267,6 +293,17 @@ void shell_task()
 
 	if (!initialized)
 		return;
+
+	// Process buffered output if enabled
+	if (obhandle != 0) {
+		if (obhandle->buffercount != 0 && millis() - obhandle->buffertimer >= 200) {
+			obhandle->buffertimer = millis();
+			if (obhandle->shell_bwriter != 0)
+				obhandle->shell_bwriter(obhandle->outbuffer, obhandle->buffercount);
+			// and clear counter
+			obhandle->buffercount = 0;
+		}
+	}
 
 	// Process each one of the received characters
 	if (shell_reader(&rxchar)) {
@@ -480,6 +517,7 @@ static void shell_prompt()
  *		Shell formatted print support			*
  *-------------------------------------------------------------*/
 #ifdef SHELL_PRINTF_LONG_SUPPORT
+
 static void uli2a(unsigned long int num, unsigned int base, int uc, char * bf)
 {
 	int n = 0;
