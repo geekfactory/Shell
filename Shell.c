@@ -342,8 +342,6 @@ void shell_task()
 				shellbuf[count] = rxchar;
 				shell_putc(rxchar);
 				count++;
-			} else {
-				shell_putc(SHELL_ASCII_BEL);
 			}
 		}
 		// Check if a full command is available on the buffer to process
@@ -360,7 +358,7 @@ void shell_task()
 				if (!strcmp_P(argv_list[0], list[i].shell_command_string))
 #else
 				if (!strcmp(argv_list[0], list[i].shell_command_string))
-#endif		
+#endif  
 				{
 					// Run the appropriate function
 					retval = list[i].shell_program(argc, argv_list);
