@@ -97,7 +97,7 @@
 #define SHELL_RET_FAILURE			1
 #define SHELL_RET_IOPENDING			-1
 
-#define SHELL_VERSION_STRING			"1.1.0"
+#define SHELL_VERSION_STRING			"1.2.0"
 
 /*-------------------------------------------------------------*
  *		Typedefs enums & structs			*
