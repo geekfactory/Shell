@@ -13,7 +13,7 @@
 
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
- 
+
 	Author website: http://www.geekfactory.mx
 	Author e-mail: ruben at geekfactory dot mx
  */
@@ -29,7 +29,7 @@
 
 #ifdef ARDUINO
 #include <Arduino.h>
-#ifdef ESP8266
+#if defined ESP8266 || defined ARDUINO_ARCH_ESP32
 #include <pgmspace.h>
 #else
 #include <avr/pgmspace.h>
@@ -260,7 +260,7 @@ extern "C" {
 	 * @brief Prints a null terminated string to the terminal from flash
 	 *
 	 * Displays a string on the terminal. The string should be null terminated.
-	 * 
+	 *
 	 * This function is designed to be used with strings stored in flash.
 	 *
 	 * @param string The string to send to the terminal
@@ -272,7 +272,7 @@ extern "C" {
 	 *
 	 * Displays a string on the terminal and moves the cursor to the next line. The
 	 * string should be null terminated.
-	 * 
+	 *
 	 * This function is designed to be used with strings stored in flash.
 	 *
 	 * @param string The string to send to the terminal
@@ -286,7 +286,7 @@ extern "C" {
 	 * specifiers (subsequences beginning with '%'), the additional arguments
 	 * following format are formatted and inserted in the resulting string
 	 * replacing their respective specifiers.
-	 * 
+	 *
 	 * This function is designed to be used with strings stored in flash.
 	 *
 	 * This function implements it�s own mechanism for text formatting. It doesn�t
