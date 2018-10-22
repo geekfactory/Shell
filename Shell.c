@@ -287,10 +287,6 @@ void shell_task()
 			// Process escape sequences: maybe later
 			break;
 
-		case SHELL_ASCII_DEL:
-			shell_writer(SHELL_ASCII_BEL);
-			break;
-
 		case SHELL_ASCII_HT:
 			shell_writer(SHELL_ASCII_BEL);
 			break;
@@ -301,6 +297,7 @@ void shell_task()
 			finished = 1;
 			break;
 
+		case SHELL_ASCII_DEL:
 		case SHELL_ASCII_BS: // Backspace pressed
 			if (count > 0) {
 				count--;
