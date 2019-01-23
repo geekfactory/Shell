@@ -66,7 +66,7 @@ static int shell_parse(char * buf, char** argv, unsigned short maxargs);
 /**
  *  Prints the command shell prompt
  */
-static void shell_prompt();
+static void shell_prompt(void);
 
 /**
  * Helper function for formatting text in shell_printf and shell_printf_pm
@@ -115,7 +115,7 @@ bool shell_register(shell_program_t program, const char * string)
 	return false;
 }
 
-void shell_unregister_all()
+void shell_unregister_all(void)
 {
 	unsigned char i;
 
@@ -125,7 +125,7 @@ void shell_unregister_all()
 	}
 }
 
-void shell_print_commands()
+void shell_print_commands(void)
 {
 	unsigned char i;
 
@@ -255,7 +255,9 @@ void shell_printf(const char * fmt, ...)
 	va_end(argl);
 }
 
-void shell_printf_pm(const char * fmt, ...)
+#ifdef ARDUINO
+
+void shell_printf_pm(const char *fmt, ...)
 {
 	// First copy to RAM
 	memcpy_P(shellfmtbuf, fmt, strlen_P(fmt) + 1);
@@ -264,8 +266,9 @@ void shell_printf_pm(const char * fmt, ...)
 	shell_format(shellfmtbuf, argl);
 	va_end(argl);
 }
+#endif
 
-void shell_task()
+void shell_task(void)
 {
 	unsigned int i = 0, retval = 0;
 	int argc = 0;
@@ -398,7 +401,7 @@ static int shell_parse(char * buf, char ** argv, unsigned short maxargs)
 	return argc;
 }
 
-static void shell_prompt()
+static void shell_prompt(void)
 {
 #ifdef ARDUINO
 	shell_print_pm(PSTR("device>"));
