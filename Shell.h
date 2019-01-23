@@ -186,7 +186,7 @@ extern "C" {
 	 *
 	 * Erases all entries on the command list, returning it to it�s default status.
 	 */
-	void shell_unregister_all();
+	void shell_unregister_all(void);
 
 	/**
 	 * @brief Prints the list of registered commands
@@ -194,7 +194,7 @@ extern "C" {
 	 * Prints a list of available commands to the terminal using the callback
 	 * functions provided on initialization.
 	 */
-	void shell_print_commands();
+	void shell_print_commands(void);
 
 	/**
 	 * @brief Prints error messages to the terminal screen
@@ -253,7 +253,7 @@ extern "C" {
 	 * this function should be called frequently so it can handle the input from the
 	 * data stream.
 	 */
-	void shell_task();
+	void shell_task(void);
 
 #ifdef ARDUINO
 	/**
