@@ -74,7 +74,7 @@ static void shell_format(const char * fmt, va_list va);
 
 /**
  * Process escaped character inside command args string
- *  
+ *
  * @param argc The total number of arguments received for the command
  * @param argv	Pointers to the argument strings
  */
@@ -281,7 +281,7 @@ void shell_print_error(int error, const char * field)
 #endif
 }
 
-void shell_task()
+int shell_task()
 {
 	// Number of characters written to buffer (this should be static var)
 	static uint16_t count = 0;
@@ -292,7 +292,7 @@ void shell_task()
 	char rxchar = 0;
 
 	if (!initialized)
-		return;
+		return retval;
 
 	// Process buffered output if enabled
 	if (obhandle != 0) {
@@ -358,7 +358,7 @@ void shell_task()
 				if (!strcmp_P(argv_list[0], list[i].shell_command_string))
 #else
 				if (!strcmp(argv_list[0], list[i].shell_command_string))
-#endif  
+#endif
 				{
 					// Run the appropriate function
 					retval = list[i].shell_program(argc, argv_list);
@@ -379,6 +379,7 @@ void shell_task()
 			shell_prompt();
 		}
 	}
+  return retval;
 }
 
 #ifdef ARDUINO
