@@ -457,9 +457,26 @@ static int shell_parse(char * buf, char ** argv, unsigned short maxargs)
 
 			// Handle special char: Space is token separator
 		case ' ':
+			//TODO is there other whitespace to handle?
 			if (toggle == 0) {
+				shell_printf("Got space, i=%d\r\n",i);
 				buf[i] = '\0';
+
+				// Try a loop?
+				while((i < length) && (buf[i + 1] == ' ')){
+					shell_printf("Got another space. i = %d\r\n",i);
+					i++;
+					buf[i] = '\0';
+				}
+				shell_printf("End of whitespace, i=%d length = %d\r\n",i,length);
+
+				if(i == length - 2){	// if we're at the end of the input (length - 2 because we're on the last char, and length points to char after terminating NULL
+					shell_printf("End of input, i=%d\r\n");
+					break;
+				}
+
 				argc++;
+				shell_printf("Adding arg %d\r\n",argc);
 				argv[argc] = &buf[i + 1];
 			}
 			break;
