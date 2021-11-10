@@ -204,7 +204,11 @@ void shell_print_commands()
 #endif
 	for (i = 0; i < CONFIG_SHELL_MAX_COMMANDS; i++) {
 		if (list[i].shell_program != 0 || list[i].shell_command_string != 0) {
+#ifdef ARDUINO
+			shell_println_pm(list[i].shell_command_string);
+#else
 			shell_println(list[i].shell_command_string);
+#endif
 		}
 	}
 }
