@@ -33,9 +33,49 @@ struct shell_command_entry list[CONFIG_SHELL_MAX_COMMANDS];
 char * argv_list[CONFIG_SHELL_MAX_COMMAND_ARGS];
 
 /**
- * This is the main buffer to store received characters from the user´s terminal
+ * This is the index of the current command buffer in the command history ring
+ * buffer
  */
-char shellbuf[CONFIG_SHELL_MAX_INPUT];
+uint8_t currentBuf;
+
+/**
+ * This is the index of the command last read from the command history ring
+ * buffer
+ */
+uint8_t historyBuf;
+
+/**
+ * This is the index of the oldest entry in the command history ring buffer
+ */
+uint8_t oldestBuf;
+
+/**
+ * This is a flag to indicate if the command history ring buffer has wrapped or
+ * not
+ */
+bool bufferWrapped;
+
+/**
+ * Number of characters written to buffer
+ */
+uint16_t count;
+
+#if CONFIG_SHELL_COMMAND_HISTORY != 1
+/**
+ * This is a buffer for storing a command that's been entered before scrolling
+ * through the command history (eg, if referencing a previous command but not
+ * executing it), and also for parsing command strings into arguments for
+ * processing
+ */
+char scratchpad[CONFIG_SHELL_MAX_INPUT];
+#endif
+
+/**
+ * This is the main buffer to store the command history, as well as received
+ * characters from the user´s terminal (in the element pointed to by
+ * currentBuf).  This is implemented as a ring buffer
+ */
+char shellbuf[CONFIG_SHELL_COMMAND_HISTORY][CONFIG_SHELL_MAX_INPUT];
 
 #ifdef ARDUINO
 /**
@@ -85,6 +125,11 @@ static void shell_process_escape(int argc, char ** argv);
  */
 static void shell_prompt();
 
+/**
+ * Clears the current command text
+ */
+static void shell_clear_command();
+
 /*-------------------------------------------------------------*
  *		Public API Implementation			*
  *-------------------------------------------------------------*/
@@ -94,6 +139,16 @@ bool shell_init(shell_reader_t reader, shell_writer_t writer, char * msg)
 		return false;
 
 	shell_unregister_all();
+
+	// Initialize command history buffer
+	for(uint8_t i = CONFIG_SHELL_COMMAND_HISTORY; i > 0; i--) {	// For each element in the command history buffer
+		shellbuf[i-1][0] = '\0';	// Set first char of this entry to NULL, an empty string
+	}
+	currentBuf = 0;	// Point to the first element in the ring buffer
+	historyBuf = currentBuf;	// Initialize this to current buffer, since we haven't read from history yet
+	oldestBuf = 0;	// Point to the first element in the ring buffer, since there's no input yet, this is the oldest
+	bufferWrapped = false;	// The buffer should now be empty, so it hasn't wrapped yet
+	count = 0;	// Initialize character count to 0
 
 	shell_reader = reader;
 	shell_writer = writer;
@@ -113,6 +168,28 @@ bool shell_init(shell_reader_t reader, shell_writer_t writer, char * msg)
 	}
 	shell_prompt();
 	return true;
+}
+
+void shell_refresh(const char * msg)
+{
+	shell_clear_command();
+	// Print Message and draw command prompt
+		if (msg != 0) {
+#ifdef ARDUINO
+			shell_println_pm(msg);
+#else
+			shell_println(msg);
+#endif
+		} else {
+	#ifdef ARDUINO
+			shell_print_pm(PSTR("Microcontroller Shell library Ver. "));
+			shell_println_pm(PSTR(SHELL_VERSION_STRING));
+	#else
+			shell_print((const char *) "Microcontroller Shell library Ver. ");
+			shell_println((const char *) SHELL_VERSION_STRING);
+	#endif
+		}
+		shell_prompt();
 }
 
 void shell_use_buffered_output(shell_bwriter_t writer)
@@ -283,8 +360,8 @@ void shell_print_error(int error, const char * field)
 
 void shell_task()
 {
-	// Number of characters written to buffer (this should be static var)
-	static uint16_t count = 0;
+	static bool escapeMode = false;
+	static bool csiMode = false;
 	uint8_t i = 0;
 	bool cc = 0;
 	int retval = 0;
@@ -307,46 +384,131 @@ void shell_task()
 
 	// Process each one of the received characters
 	if (shell_reader(&rxchar)) {
+		if (escapeMode) {
+			if (csiMode) {	// Control Sequence Introducer mode
+				if ((rxchar >= 0x30) && (rxchar <= 0x3f)) {	// Parameter bytes, ignore for now
 
-		switch (rxchar) {
-		case SHELL_ASCII_ESC: // For VT100 escape sequences
-			// Process escape sequences: maybe later
-			break;
+				} else if ((rxchar >= 0x20) && (rxchar <= 0x2F)) {	// Intermediate byte, ignore for now
 
-		case SHELL_ASCII_DEL:
-			shell_putc(SHELL_ASCII_BEL);
-			break;
+				} else if ((rxchar >= 0x40) && (rxchar <= 0x7E)) {	// Final byte, this is the actual command
+					switch (rxchar) {
+					case SHELL_VT100_ARROWUP:	// Arrow up pressed
+						if (historyBuf != oldestBuf) {
+#if CONFIG_SHELL_COMMAND_HISTORY != 1
+							if (historyBuf == currentBuf) {	// If we're leaving the newest command buffer
+								if (count > 0) {	// If a partial command has been entered
+									strcpy(scratchpad,shellbuf[currentBuf]);	// Save the currently entered command for later editing
+								} else {
+									scratchpad[0] = '\0';	// Make sure scratchpad is empty
+								}
+							}
+							shell_clear_command();	// Clear the current command buffer and displayed text
+							// Move historyBuf to point to the next oldest command
+							if (historyBuf == 0) {	// Make sure to wrap ring buffer correctly
+								historyBuf = CONFIG_SHELL_COMMAND_HISTORY - 1;
+							} else {
+								historyBuf--;
+							}
+							shell_print(shellbuf[historyBuf]);	// Print the historic command to the shell
+							strcpy(shellbuf[currentBuf],shellbuf[historyBuf]);	// Copy the historic command into the current command buffer
+							count = strlen(shellbuf[currentBuf]);	// Update the char counter
+#endif
+						} else {
+							shell_putc(SHELL_ASCII_BEL);	// Print a Bell to indicate we're at the end of the history
+						}
+						break;
+					case SHELL_VT100_ARROWDOWN:	// Arrow down pressed
+						if (historyBuf != currentBuf) {
+#if CONFIG_SHELL_COMMAND_HISTORY != 1
+							shell_clear_command();	// Clear the current command buffer and displayed text
+							// Move historyBuf to point to the next newest command
+							if (historyBuf == CONFIG_SHELL_COMMAND_HISTORY -1) {	// Make sure to wrap ring buffer correctly
+								historyBuf = 0;
+							} else {
+								historyBuf++;
+							}
+							if (historyBuf == currentBuf) { // We've reached the newest command buffer (not a history entry), so restore the saved command text from the scratchpad
+								if(strlen(scratchpad) > 0) {	// If there's a partial command saved to the scratchpad
+									shell_print(scratchpad);	// Print scratchpad text to the shell
+									strcpy(shellbuf[currentBuf],scratchpad);	// Copy the scratchpad text into the current command buffer
+								}
+							} else {	// We're still moving between history entries
+								shell_print(shellbuf[historyBuf]);	// Print the historic command to the shell
+								strcpy(shellbuf[currentBuf],shellbuf[historyBuf]);	// Copy the historic command into the current command buffer
+							}
+							count = strlen(shellbuf[currentBuf]);	// Update the char counter
+#endif
+						} else {
+							shell_putc(SHELL_ASCII_BEL);	// Print a Bell to indicate we're at the end of the history
+						}
+						break;
+					default:
+						// Process other escape sequences: maybe later
+						break;
+					}
+					csiMode = false;	// Exit Control Sequence Introducer mode
+					escapeMode = false;	// Exit escape character mode
+				}
+			} else {	// Handle other escape modes later
+				switch (rxchar)	{
+				case SHELL_VT100_CSI:	// Escape sequence is a Control Sequence Introduction
+					csiMode = true;	// Enter Control Sequence Introducer mode on next char received
+					break;
+				default:	// Process other escape modes later
+					escapeMode = false;
+					break;
+				}
+			}
+		} else {	// Not in escape sequence mode
+			switch (rxchar) {
+			case SHELL_ASCII_ESC: // For VT100 escape sequences
+				escapeMode = true;
+				break;
 
-		case SHELL_ASCII_HT:
-			shell_putc(SHELL_ASCII_BEL);
-			break;
-
-		case SHELL_ASCII_CR: // Enter key pressed
-			shellbuf[count] = '\0';
-			shell_println("");
-			cc = true;
-			break;
-
-		case SHELL_ASCII_BS: // Backspace pressed
-			if (count > 0) {
-				count--;
-				shell_putc(SHELL_ASCII_BS);
-				shell_putc(SHELL_ASCII_SP);
-				shell_putc(SHELL_ASCII_BS);
-			} else
+			case SHELL_ASCII_DEL:
 				shell_putc(SHELL_ASCII_BEL);
-			break;
-		default:
-			// Process printable characters, but ignore other ASCII chars
-			if (count < (CONFIG_SHELL_MAX_INPUT - 1) && rxchar >= 0x20 && rxchar < 0x7F) {
-				shellbuf[count] = rxchar;
-				shell_putc(rxchar);
-				count++;
+				break;
+
+			case SHELL_ASCII_HT:
+				shell_putc(SHELL_ASCII_BEL);
+				break;
+
+			case SHELL_ASCII_CR: // Enter key pressed
+				shellbuf[currentBuf][count] = '\0';
+				shell_println("");
+				cc = true;
+				break;
+
+			case SHELL_ASCII_BS: // Backspace pressed
+				if (count > 0) {
+					shellbuf[currentBuf][count] = '\0';	// Set char to NULL so we don't have to worry about this text next time through the ring buffer
+					count--;
+					shell_putc(SHELL_ASCII_BS);
+					shell_putc(SHELL_ASCII_SP);
+					shell_putc(SHELL_ASCII_BS);
+				} else
+					shell_putc(SHELL_ASCII_BEL);
+				break;
+			default:
+				// Process printable characters, but ignore other ASCII chars
+				if (count < (CONFIG_SHELL_MAX_INPUT - 1) && rxchar >= 0x20 && rxchar < 0x7F) {
+					shellbuf[currentBuf][count] = rxchar;
+					if (count < CONFIG_SHELL_MAX_INPUT - 2) {	// If we aren't at the end of the input buffer
+						shellbuf[currentBuf][count + 1] = '\0';	// Set next char to NULL to denote the end of the string in case there was old historic command text left here
+					}
+					shell_putc(rxchar);
+					count++;
+				}
 			}
 		}
 		// Check if a full command is available on the buffer to process
 		if (cc) {
-			argc = shell_parse(shellbuf, argv_list, CONFIG_SHELL_MAX_COMMAND_ARGS);
+#if CONFIG_SHELL_COMMAND_HISTORY == 1
+			argc = shell_parse(shellbuf[currentBuf], argv_list, CONFIG_SHELL_MAX_COMMAND_ARGS);
+#else
+			strcpy(scratchpad,shellbuf[currentBuf]);	// Copy current command buffer to scratchpad so we don't fill command history with NULLs between each argument
+			argc = shell_parse(scratchpad, argv_list, CONFIG_SHELL_MAX_COMMAND_ARGS);
+#endif
 			// Process escape sequences before giving args to command implementation
 			shell_process_escape(argc, argv_list);
 			// sequential search on command table
@@ -373,8 +535,35 @@ void shell_task()
 				shell_println((const char *) "Command NOT found."); // Print not found!!
 #endif
 			}
+
+			if (count != 0) {	// If we didn't get an empty command
+				if (
+						(currentBuf == oldestBuf) || // If the history buffer is empty, ie we're on the first command, or...
+						(strcmp(shellbuf[currentBuf],shellbuf[currentBuf == 0 ? CONFIG_SHELL_COMMAND_HISTORY - 1 : currentBuf - 1]) != 0)	// This command is not the same as the previous command
+						) {
+					// Increment command history ring buffer indices
+					if (currentBuf == CONFIG_SHELL_COMMAND_HISTORY - 1) {
+						currentBuf = 0;
+						bufferWrapped = true;
+					} else {
+						currentBuf++;
+					}
+					if (bufferWrapped) {	// If the history buffer is full, and it's time to start moving the oldest buffer entry index
+						if (oldestBuf == CONFIG_SHELL_COMMAND_HISTORY - 1) {
+							oldestBuf = 0;
+						} else {
+							oldestBuf++;
+						}
+					}
+				}
+			}
+
+			// Clear flags and counters
+			historyBuf = currentBuf;	// Update historyBuf so it's ready to move to the most recent history entry
 			count = 0;
 			cc = false;
+
+			// Print a new prompt
 			shell_println("");
 			shell_prompt();
 		}
@@ -418,7 +607,7 @@ static int shell_parse(char * buf, char ** argv, unsigned short maxargs)
 {
 	int i = 0;
 	int argc = 0;
-	int length = strlen(buf) + 1; //String lenght to parse = strlen + 1
+	int length = strlen(buf) + 1; //String length to parse = strlen + 1
 	char toggle = 0;
 	bool escape = false;
 
@@ -509,6 +698,19 @@ static void shell_prompt()
 #else
 	shell_print((const char *) "device>");
 #endif
+}
+
+static void shell_clear_command()
+{
+	while (count > 0) {	// While there are chars left in the current command buffer
+		// Clear out the displayed text (just like a backspace)
+		shell_putc(SHELL_ASCII_BS);
+		shell_putc(SHELL_ASCII_SP);
+		shell_putc(SHELL_ASCII_BS);
+
+		shellbuf[currentBuf][count - 1] = '\0';	// Set the char to NULL
+		count--;	// Decrement char counter
+	}
 }
 
 /*-------------------------------------------------------------*
