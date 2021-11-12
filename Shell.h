@@ -201,6 +201,18 @@ extern "C" {
 	bool shell_init(shell_reader_t reader, shell_writer_t writer, char * msg);
 	
 	/**
+	 * @brief Removes stale input and prints a new command prompt
+	 *
+	 * Refreshes the command prompt by removing any input from the input buffer
+	 * and shell, and prints a welcome message and new command prompt.  This is
+	 * useful if the user will be connecting to the shell after the command
+	 * prompt has been printed (eg, when connecting via Telnet).
+	 *
+	 * @param msg The welcome message to display
+	 */
+	void shell_refresh(const char * msg);
+
+	/**
 	 * @brief Enables internal output buffer for output chars
 	 * 
 	 * Call this function to enable the use of an internal buffer to temporary store

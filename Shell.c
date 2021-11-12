@@ -170,6 +170,28 @@ bool shell_init(shell_reader_t reader, shell_writer_t writer, char * msg)
 	return true;
 }
 
+void shell_refresh(const char * msg)
+{
+	shell_clear_command();
+	// Print Message and draw command prompt
+		if (msg != 0) {
+#ifdef ARDUINO
+			shell_println_pm(msg);
+#else
+			shell_println(msg);
+#endif
+		} else {
+	#ifdef ARDUINO
+			shell_print_pm(PSTR("Microcontroller Shell library Ver. "));
+			shell_println_pm(PSTR(SHELL_VERSION_STRING));
+	#else
+			shell_print((const char *) "Microcontroller Shell library Ver. ");
+			shell_println((const char *) SHELL_VERSION_STRING);
+	#endif
+		}
+		shell_prompt();
+}
+
 void shell_use_buffered_output(shell_bwriter_t writer)
 {
 	static struct shell_outbuffer_data obd;
