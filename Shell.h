@@ -79,7 +79,7 @@
  * (Arduino MEGA and better). It can be enabled on smaller systems, but only
  * when (CONFIG_SHELL_MAX_INPUT * (CONFIG_SHELL_COMMAND_HISTORY + 1)) + 4 bytes
  * of RAM are available. For a history list that is 10 commands long and the
- * default input buffer length 0f 70, this would be 774 bytes. The max history
+ * default input buffer length of 70, this would be 774 bytes. The max history
  * length is 255 entries.
  */
 #define CONFIG_SHELL_COMMAND_HISTORY	1

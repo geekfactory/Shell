@@ -71,6 +71,11 @@ void loop()
 {
   // Check if a client is willing to connect and get client object
   client = server.available();
+  char telnetCommands[] = {
+    0xFF, 0xFE, 0x22, // Dont Linemode
+    0xFF, 0xFB, 0x01, // Will Echo
+    };
+  client.write(telnetCommands,sizeof(telnetCommands));
   // This should always be called to process user input
   shell_task();
 }
@@ -140,5 +145,3 @@ void shell_writer(char data)
     client.write(data);
   }
 }
-
-
