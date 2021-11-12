@@ -187,6 +187,21 @@ extern "C" {
 	bool shell_init(shell_reader_t reader, shell_writer_t writer, char * msg);
 	
 	/**
+	 * @brief Sets the command prompt text
+	 *
+	 * Call this function to set the text displayed on the command prompt.  The
+	 * maximum length of the prompt, including terminating NULL, is 16
+	 * characters.  The buffer can be made larger in Shell.c.
+	 *
+	 * NOTE: This function expects to receive a pointer to a string in RAM, not
+	 * PROGMEM.  If a PROGMEM string is desired, first copy it to RAM with
+	 * strcpy_P().
+	 *
+	 * @param prompt The new command prompt text.
+	 */
+	void shell_set_prompt(char * prompt);
+
+	/**
 	 * @brief Enables internal output buffer for output chars
 	 * 
 	 * Call this function to enable the use of an internal buffer to temporary store

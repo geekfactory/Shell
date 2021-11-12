@@ -27,6 +27,11 @@
 struct shell_command_entry list[CONFIG_SHELL_MAX_COMMANDS];
 
 /**
+ * This buffer is used to store the command prompt text
+ */
+char promptText[16];
+
+/**
  * This array of pointers to characters holds the addresses of the beginning of
  * the parameter strings passed to the programs
  */
@@ -95,6 +100,9 @@ bool shell_init(shell_reader_t reader, shell_writer_t writer, char * msg)
 
 	shell_unregister_all();
 
+	// Set up initial command text prompt
+	shell_set_prompt("device");
+
 	shell_reader = reader;
 	shell_writer = writer;
 	initialized = true;
@@ -113,6 +121,10 @@ bool shell_init(shell_reader_t reader, shell_writer_t writer, char * msg)
 	}
 	shell_prompt();
 	return true;
+}
+
+void shell_set_prompt(char * prompt){
+	strncpy(promptText,prompt,sizeof(promptText));
 }
 
 void shell_use_buffered_output(shell_bwriter_t writer)
@@ -504,11 +516,8 @@ static void shell_process_escape(int argc, char ** argv)
 
 static void shell_prompt()
 {
-#ifdef ARDUINO
-	shell_print_pm(PSTR("device>"));
-#else
-	shell_print((const char *) "device>");
-#endif
+	shell_print(promptText);
+	shell_print(">");
 }
 
 /*-------------------------------------------------------------*
