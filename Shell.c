@@ -124,6 +124,9 @@ void shell_use_buffered_output(shell_bwriter_t writer)
 	obd.shell_bwriter = writer;
 	obd.buffercount = 0;
 	obd.buffertimer = millis();
+
+	// Set shell_writer to 0 so that it's no longer called
+	shell_writer = 0;
 }
 
 bool shell_register(shell_program_t program, const char * string)
