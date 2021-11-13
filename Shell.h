@@ -48,7 +48,7 @@
 /**
  * Defines the maximum number of commands that can be registered
  */
-#define CONFIG_SHELL_MAX_COMMANDS		5
+#define CONFIG_SHELL_MAX_COMMANDS		15
 #endif
 #if !defined(CONFIG_SHELL_MAX_INPUT)
 /**
@@ -72,6 +72,19 @@
 #endif
 
 /**
+ * This macro sets the size of the command history list (or disables the feature
+ * when set to 1). This feature is disabled by default, and should only be
+ * enabled on systems with enough RAM to support it. As a rule of thumb,
+ * command history should only be enabled on systems with at least 8k of RAM
+ * (Arduino MEGA and better). It can be enabled on smaller systems, but only
+ * when (CONFIG_SHELL_MAX_INPUT * (CONFIG_SHELL_COMMAND_HISTORY + 1)) + 4 bytes
+ * of RAM are available. For a history list that is 10 commands long and the
+ * default input buffer length of 70, this would be 774 bytes. The max history
+ * length is 255 entries.
+ */
+#define CONFIG_SHELL_COMMAND_HISTORY	10
+
+/**
  * End of user configurable parameters, do not touch anything below this line
  */
 
@@ -88,6 +101,7 @@
 #define SHELL_ASCII_DEL				0x7F
 #define SHELL_ASCII_US				0x1F
 #define SHELL_ASCII_SP				0x20
+#define SHELL_VT100_CSI				0x5B
 #define SHELL_VT100_ARROWUP			'A'
 #define SHELL_VT100_ARROWDOWN			'B'
 #define SHELL_VT100_ARROWRIGHT			'C'
@@ -97,7 +111,7 @@
 #define SHELL_RET_FAILURE			1
 #define SHELL_RET_IOPENDING			-1
 
-#define SHELL_VERSION_STRING			"1.2.0"
+#define SHELL_VERSION_STRING			"1.2.0-testing"
 
 /*-------------------------------------------------------------*
  *		Typedefs enums & structs			*
@@ -187,6 +201,33 @@ extern "C" {
 	bool shell_init(shell_reader_t reader, shell_writer_t writer, char * msg);
 	
 	/**
+	 * @brief Sets the command prompt text
+	 *
+	 * Call this function to set the text displayed on the command prompt.  The
+	 * maximum length of the prompt, including terminating NULL, is 16
+	 * characters.  The buffer can be made larger in Shell.c.
+	 *
+	 * NOTE: This function expects to receive a pointer to a string in RAM, not
+	 * PROGMEM.  If a PROGMEM string is desired, first copy it to RAM with
+	 * strcpy_P().
+	 *
+	 * @param prompt The new command prompt text.
+	 */
+	void shell_set_prompt(const char * prompt);
+
+	/**
+	 * @brief Removes stale input and prints a new command prompt
+	 *
+	 * Refreshes the command prompt by removing any input from the input buffer
+	 * and shell, and prints a welcome message and new command prompt.  This is
+	 * useful if the user will be connecting to the shell after the command
+	 * prompt has been printed (eg, when connecting via Telnet).
+	 *
+	 * @param msg The welcome message to display
+	 */
+	void shell_refresh(const char * msg);
+
+	/**
 	 * @brief Enables internal output buffer for output chars
 	 * 
 	 * Call this function to enable the use of an internal buffer to temporary store
@@ -269,7 +310,7 @@ extern "C" {
 	 * @param fmt The string to send to the terminal, the string can include format
 	 * specifiers in a similar fashion to printf standard function.
 	 *
-	 * @param ... Aditional arguments that are inserted on the string as text
+	 * @param ... Additional arguments that are inserted on the string as text
 	 */
 	void shell_printf(const char * fmt, ...);
 
@@ -342,7 +383,7 @@ extern "C" {
 	 * @param fmt The string to send to the terminal, the string can include format
 	 * specifiers in a similar fashion to printf standard function.
 	 *
-	 * @param ... Aditional arguments that are inserted on the string as text
+	 * @param ... Additional arguments that are inserted on the string as text
 	 */
 	void shell_printf_pm(const char * fmt, ...);
 #endif
