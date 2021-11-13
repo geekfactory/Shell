@@ -152,21 +152,23 @@ void shell_unregister_all()
 
 void shell_putc(char c)
 {
-	if (initialized != false && shell_writer != 0)
-		shell_writer(c);
-	if (initialized != false && obhandle != 0) {
-		// Keep track of last byte
-		obhandle->buffertimer = millis();
-		// Empty buffer if it´s full before storing anything else
-		if (obhandle->buffercount >= 30) {
-			// Write output...
-			if (obhandle->shell_bwriter != 0)
-				obhandle->shell_bwriter(obhandle->outbuffer, obhandle->buffercount);
-			// and clear counter
-			obhandle->buffercount = 0;
+	if (initialized != false) {
+		if (shell_writer != 0) {
+			shell_writer(c);
+		} else if (obhandle != 0) {
+			// Keep track of last byte
+			obhandle->buffertimer = millis();
+			// Empty buffer if it´s full before storing anything else
+			if (obhandle->buffercount >= 30) {
+				// Write output...
+				if (obhandle->shell_bwriter != 0)
+					obhandle->shell_bwriter(obhandle->outbuffer, obhandle->buffercount);
+				// and clear counter
+				obhandle->buffercount = 0;
+			}
+			// Write to buffer always
+			obhandle->outbuffer[obhandle->buffercount++] = c;
 		}
-		// Write to buffer always
-		obhandle->outbuffer[obhandle->buffercount++] = c;
 	}
 }
 
