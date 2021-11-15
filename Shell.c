@@ -344,10 +344,12 @@ void shell_task()
 				count++;
 
 				// If we're using buffered output, flush the output buffer so the user gets immediate feedback on their key press
-				if (obhandle->shell_bwriter != 0)
-					obhandle->shell_bwriter(obhandle->outbuffer, obhandle->buffercount);
+				if (obhandle != 0) {
+					if (obhandle->shell_bwriter != 0)
+						obhandle->shell_bwriter(obhandle->outbuffer, obhandle->buffercount);
 					// and clear counter
 					obhandle->buffercount = 0;
+				}
 			}
 		}
 		// Check if a full command is available on the buffer to process
@@ -515,6 +517,14 @@ static void shell_prompt()
 #else
 	shell_print((const char *) "device>");
 #endif
+
+	// If we're using buffered output, flush the output buffer so the user gets immediate feedback on their key press
+	if (obhandle != 0) {
+		if (obhandle->shell_bwriter != 0)
+			obhandle->shell_bwriter(obhandle->outbuffer, obhandle->buffercount);
+		// and clear counter
+		obhandle->buffercount = 0;
+	}
 }
 
 /*-------------------------------------------------------------*
