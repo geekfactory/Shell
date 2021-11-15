@@ -72,6 +72,19 @@
 #endif
 
 /**
+ * This macro sets the size of the command history list (or disables the feature
+ * when set to 1). This feature is disabled by default, and should only be
+ * enabled on systems with enough RAM to support it. As a rule of thumb,
+ * command history should only be enabled on systems with at least 8k of RAM
+ * (Arduino MEGA and better). It can be enabled on smaller systems, but only
+ * when (CONFIG_SHELL_MAX_INPUT * (CONFIG_SHELL_COMMAND_HISTORY + 1)) + 4 bytes
+ * of RAM are available. For a history list that is 10 commands long and the
+ * default input buffer length of 70, this would be 774 bytes. The max history
+ * length is 255 entries.
+ */
+#define CONFIG_SHELL_COMMAND_HISTORY	1
+
+/**
  * End of user configurable parameters, do not touch anything below this line
  */
 
@@ -88,6 +101,7 @@
 #define SHELL_ASCII_DEL				0x7F
 #define SHELL_ASCII_US				0x1F
 #define SHELL_ASCII_SP				0x20
+#define SHELL_VT100_CSI				0x5B
 #define SHELL_VT100_ARROWUP			'A'
 #define SHELL_VT100_ARROWDOWN			'B'
 #define SHELL_VT100_ARROWRIGHT			'C'
@@ -269,7 +283,7 @@ extern "C" {
 	 * @param fmt The string to send to the terminal, the string can include format
 	 * specifiers in a similar fashion to printf standard function.
 	 *
-	 * @param ... Aditional arguments that are inserted on the string as text
+	 * @param ... Additional arguments that are inserted on the string as text
 	 */
 	void shell_printf(const char * fmt, ...);
 
@@ -342,7 +356,7 @@ extern "C" {
 	 * @param fmt The string to send to the terminal, the string can include format
 	 * specifiers in a similar fashion to printf standard function.
 	 *
-	 * @param ... Aditional arguments that are inserted on the string as text
+	 * @param ... Additional arguments that are inserted on the string as text
 	 */
 	void shell_printf_pm(const char * fmt, ...);
 #endif
