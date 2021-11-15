@@ -35,6 +35,15 @@ byte gateway[] = {
 byte subnet[] = { 
   255, 255, 255, 0 };
 
+//Telnet Macros
+#define TELNET_IAC          0xFF
+#define TELNET_DONT         0xFE
+#define TELNET_DO           0xFD
+#define TELNET_WONT         0xFC
+#define TELNET_WILL         0xFB
+#define TELNET_OPT_ECHO     0x01
+#define TELNET_SUPPRESS_GA  0x03
+
 // Create the server instance on port 23 (default port for telnet protocol)
 EthernetServer server = EthernetServer(23);
 // The client that is willing to connect to server
@@ -72,9 +81,10 @@ void loop()
   // Check if a client is willing to connect and get client object
   client = server.available();
   char telnetCommands[] = {
-    0xFF, 0xFE, 0x22, // Dont Linemode
-    0xFF, 0xFB, 0x01, // Will Echo
-    };
+          TELNET_IAC, TELNET_WILL, TELNET_OPT_ECHO,
+          TELNET_IAC, TELNET_DONT, TELNET_OPT_ECHO,
+          TELNET_IAC, TELNET_WILL, TELNET_SUPPRESS_GA
+          };
   client.write(telnetCommands,sizeof(telnetCommands));
   // This should always be called to process user input
   shell_task();
