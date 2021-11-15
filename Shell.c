@@ -342,6 +342,12 @@ void shell_task()
 				shellbuf[count] = rxchar;
 				shell_putc(rxchar);
 				count++;
+
+				// If we're using buffered output, flush the output buffer so the user gets immediate feedback on their key press
+				if (obhandle->shell_bwriter != 0)
+					obhandle->shell_bwriter(obhandle->outbuffer, obhandle->buffercount);
+					// and clear counter
+					obhandle->buffercount = 0;
 			}
 		}
 		// Check if a full command is available on the buffer to process
