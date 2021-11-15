@@ -158,7 +158,7 @@ void shell_putc(char c)
 		// Keep track of last byte
 		obhandle->buffertimer = millis();
 		// Empty buffer if it´s full before storing anything else
-		if (obhandle->buffercount >= 30) {
+		if (obhandle->buffercount >= CONFIG_SHELL_OUT_BUFFER_LEN) {
 			// Write output...
 			if (obhandle->shell_bwriter != 0)
 				obhandle->shell_bwriter(obhandle->outbuffer, obhandle->buffercount);
