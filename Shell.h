@@ -13,7 +13,7 @@
 
 	You should have received a copy of the GNU General Public License
 	along with this program.  If not, see <http://www.gnu.org/licenses/>.
- 
+
 	Author website: http://www.geekfactory.mx
 	Author e-mail: ruben at geekfactory dot mx
  */
@@ -185,19 +185,19 @@ extern "C" {
 	 * otherwise.
 	 */
 	bool shell_init(shell_reader_t reader, shell_writer_t writer, char * msg);
-	
+
 	/**
 	 * @brief Enables internal output buffer for output chars
-	 * 
+	 *
 	 * Call this function to enable the use of an internal buffer to temporary store
 	 * characters that will be sent to a remote device. This function is meant to be
-	 * used when the communication channel performs better when many characters are 
-	 * written at the same time. For example TCP/IP sockets perform better if a group 
+	 * used when the communication channel performs better when many characters are
+	 * written at the same time. For example TCP/IP sockets perform better if a group
 	 * of characters are sent on a single segment.
-	 * 
+	 *
 	 * The content of the internal buffer is written when the it is full or if
 	 * 200 milliseconds have elapsed since the last character write on the buffer.
-	 * 
+	 *
          * @param writer The callback function used to write a group of characters on the
 	 * stream.
          */
@@ -228,10 +228,10 @@ extern "C" {
 
 	/**
 	 * @brief Prints a character to the terminal
-	 * 
+	 *
 	 * Prints a single character to the terminal screen, it exposes the functionality
 	 * of the shell_writer callback function
-	 * 
+	 *
 	 * @param c A character to print to the terminal screen
 	 */
 	void shell_putc(char c);
@@ -301,7 +301,7 @@ extern "C" {
 	 * this function should be called frequently so it can handle the input from the
 	 * data stream.
 	 */
-	void shell_task();
+	int shell_task();
 
 #ifdef ARDUINO
 	/**
@@ -333,7 +333,7 @@ extern "C" {
 	 * specifiers (subsequences beginning with '%'), the additional arguments
 	 * following format are formatted and inserted in the resulting string
 	 * replacing their respective specifiers.
-	 * 
+	 *
 	 * This function is designed to be used with strings stored in flash.
 	 *
 	 * This function implements it's own mechanism for text formatting. It doesn't
