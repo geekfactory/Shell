@@ -456,6 +456,20 @@ static int shell_parse(char * buf, char ** argv, unsigned short maxargs)
 		case ' ':
 			if (toggle == 0) {
 				buf[i] = '\0';
+
+				// Loop past any consecutive spaces
+				while((i < length) && (buf[i + 1] == ' ')){
+					i++;
+					buf[i] = '\0';
+				}
+
+				// If we're at the end of the input (length - 2 because we're on the last char,
+				// and length points to char after terminating NULL
+				if(i == length - 2){
+					break;	// Break out of loop to avoid adding an empty argument at the end
+				}
+
+				// Increment argument counter and add argument to argv array
 				argc++;
 				argv[argc] = &buf[i + 1];
 			}
