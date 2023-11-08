@@ -72,6 +72,15 @@
 #endif
 
 /**
+ * This macro defines the length of the output buffer.  This should be large
+ * enough to accommodate most large writes via the shell_print functions, but
+ * still small enough to fit in a single shell_bwriter call (ie, UINT_8T_MAX,
+ * 255 bytes).  This buffer is also statically allocated, and should not be so
+ * large that it uses all the available RAM in the system.
+ */
+#define CONFIG_SHELL_OUT_BUFFER_LEN		30
+
+/**
  * End of user configurable parameters, do not touch anything below this line
  */
 
@@ -158,7 +167,7 @@ struct shell_command_entry {
 };
 
 struct shell_outbuffer_data {
-	char outbuffer[30];
+	char outbuffer[CONFIG_SHELL_OUT_BUFFER_LEN];
 	shell_bwriter_t shell_bwriter;
 	uint32_t buffertimer;
 	uint8_t buffercount;
